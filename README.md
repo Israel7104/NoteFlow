@@ -4,7 +4,7 @@ Aplicacion React Native (Expo + TypeScript) para organizar notas, checklists e i
 
 ## Tablero de trabajo
 
-- Trello: https://trello.com/b/REEMPLAZAR_NOTEFLOW_BOARD
+- Trello: https://trello.com/invite/b/6a03395c37287800df3990f7/ATTIf57e92c80aad09a7754e80eb1fd010a8F3EE1735/noteflow-ce
 
 ## Estructura del proyecto
 

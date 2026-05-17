@@ -27,7 +27,7 @@ En cada tarjeta se incluye una funcionalidad principal de NoteFlow y una lista d
 
 ## Enlace al tablero
 
-- https://trello.com/b/REEMPLAZAR_NOTEFLOW_BOARD
+- https://trello.com/invite/b/6a03395c37287800df3990f7/ATTIf57e92c80aad09a7754e80eb1fd010a8F3EE1735/noteflow-ce
 
 ## Regla operativa
 
