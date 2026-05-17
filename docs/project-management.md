@@ -12,6 +12,13 @@ El trabajo se gestiona con un tablero Trello en 5 columnas:
 
 En cada tarjeta se incluye una funcionalidad principal de NoteFlow y una lista de subtareas tecnicas concretas (modelo de datos, UI, estado, pruebas y documentacion).
 
+## Flujo de ramas
+
+1. Cada funcionalidad nueva o arreglo vive primero en una rama separada.
+2. `develop` funciona como rama de integracion para desarrollo continuo.
+3. `main` solo recibe cambios cuando ya fueron verificados y se considera que funcionan.
+4. Si una tarea grande necesita validacion, se desarrolla en una rama de tipo `feature/*` o `fix/*` y luego se integra en `develop`.
+
 ## Tarjetas principales recomendadas
 
 1. Notas de texto con detalle y eliminacion
