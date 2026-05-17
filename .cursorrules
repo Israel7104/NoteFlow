@@ -1,0 +1,46 @@
+Project: NoteFlow (Expo + React Native + TypeScript)
+
+Goals:
+- Build a performant, typed mobile app with notes, checklists, and ideas.
+- Keep architecture simple, scalable, and consistent with Expo Router.
+
+Tech Stack:
+- Expo SDK 54
+- React Native + TypeScript (strict)
+- Expo Router (file-based navigation)
+- Zustand + AsyncStorage persist middleware
+- React Native Paper (MD3 theming)
+- FlashList for long lists
+- Zod for form validation
+
+Folder Conventions:
+- app/: routes and screens only
+- components/: presentational reusable components
+- store/: Zustand stores and state logic
+- types/: domain interfaces and type guards
+- constants/: theme tokens and constants
+- docs/: architecture and technical docs
+
+Code Style:
+- Prefer explicit TypeScript types and no any.
+- Use type guards for union types.
+- Keep components focused; move heavy logic to store/utilities.
+- Avoid deeply nested JSX and duplicated logic.
+- Follow predictable naming: PascalCase for components, camelCase for vars/functions.
+
+Performance Rules:
+- Use FlashList for collections.
+- Provide estimatedItemSize in every FlashList.
+- Avoid unnecessary state in list rows.
+- Use selectors with Zustand to prevent broad re-renders.
+
+Architecture Constraints:
+- Do not place business logic inside UI-only components.
+- Keep persistence inside store middleware layer.
+- Use Tabs for top-level sections, Stack for detail, modal for create flows.
+- Respect dark/light mode tokens from constants/theme.ts.
+
+Validation & UX:
+- Validate inputs with Zod before store writes.
+- Show user-facing validation messages near the field.
+- Use haptics only for meaningful actions (delete/complete).

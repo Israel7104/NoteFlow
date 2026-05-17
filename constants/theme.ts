@@ -1,0 +1,115 @@
+import type { MD3Theme } from "react-native-paper";
+
+const palette = {
+  amber: "#E3A857",
+  ink: "#1E1B16",
+  cream: "#F8F1E6",
+  clay: "#8C5E3C",
+  moss: "#5E7C56",
+  tomato: "#B7483C",
+  sky: "#79A9D1",
+};
+
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+};
+
+export const typography = {
+  titleLarge: 28,
+  titleMedium: 22,
+  body: 16,
+  caption: 13,
+};
+
+export const noteIdeaColors = [palette.sky, "#D5A6E8", "#F1C06B", "#A7CFA0", "#F39A8F"];
+
+export const lightTheme: Partial<MD3Theme> = {
+  roundness: 14,
+  colors: {
+    primary: palette.clay,
+    onPrimary: "#FFFFFF",
+    primaryContainer: "#F0DCC7",
+    onPrimaryContainer: palette.ink,
+    secondary: palette.moss,
+    onSecondary: "#FFFFFF",
+    secondaryContainer: "#D5E7D0",
+    onSecondaryContainer: palette.ink,
+    tertiary: palette.sky,
+    onTertiary: palette.ink,
+    tertiaryContainer: "#D8E8F5",
+    onTertiaryContainer: palette.ink,
+    error: palette.tomato,
+    onError: "#FFFFFF",
+    background: palette.cream,
+    onBackground: palette.ink,
+    surface: "#FFF9F0",
+    onSurface: palette.ink,
+    surfaceVariant: "#EEE2D4",
+    onSurfaceVariant: "#5D5348",
+    outline: "#9A8773",
+    elevation: {
+      level0: "transparent",
+      level1: "#F7EBDD",
+      level2: "#F2E4D4",
+      level3: "#EBDCCB",
+      level4: "#E7D5C2",
+      level5: "#E3CFB9",
+    },
+    shadow: "#000000",
+    scrim: "#000000",
+    inverseSurface: "#352F27",
+    inverseOnSurface: "#F9EFE3",
+    inversePrimary: palette.amber,
+    backdrop: "rgba(53, 47, 39, 0.4)",
+    surfaceDisabled: "rgba(30, 27, 22, 0.12)",
+    onSurfaceDisabled: "rgba(30, 27, 22, 0.38)",
+  },
+};
+
+export const darkTheme: Partial<MD3Theme> = {
+  roundness: 14,
+  colors: {
+    primary: palette.amber,
+    onPrimary: "#2F210F",
+    primaryContainer: "#5A3D1F",
+    onPrimaryContainer: "#FCE3BC",
+    secondary: "#B5D0AB",
+    onSecondary: "#20351D",
+    secondaryContainer: "#394E35",
+    onSecondaryContainer: "#D5E7D0",
+    tertiary: "#B6CCE1",
+    onTertiary: "#203445",
+    tertiaryContainer: "#385369",
+    onTertiaryContainer: "#D8E8F5",
+    error: "#FFB4AB",
+    onError: "#690005",
+    background: "#17130E",
+    onBackground: "#F3E8D8",
+    surface: "#1F1A14",
+    onSurface: "#F3E8D8",
+    surfaceVariant: "#4E4438",
+    onSurfaceVariant: "#D3C3B3",
+    outline: "#9B8F82",
+    elevation: {
+      level0: "transparent",
+      level1: "#251E16",
+      level2: "#2A231B",
+      level3: "#302820",
+      level4: "#332B22",
+      level5: "#372E25",
+    },
+    shadow: "#000000",
+    scrim: "#000000",
+    inverseSurface: "#F3E8D8",
+    inverseOnSurface: "#352F27",
+    inversePrimary: "#8C5E3C",
+    backdrop: "rgba(0, 0, 0, 0.4)",
+    surfaceDisabled: "rgba(243, 232, 216, 0.12)",
+    onSurfaceDisabled: "rgba(243, 232, 216, 0.38)",
+  },
+};
