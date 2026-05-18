@@ -19,7 +19,8 @@ export default function NotesScreen() {
       notes.filter(
         (note) =>
           note.title.toLowerCase().includes(query.toLowerCase()) ||
-          note.content.toLowerCase().includes(query.toLowerCase()),
+          note.content.toLowerCase().includes(query.toLowerCase()) ||
+          note.status.toLowerCase().includes(query.toLowerCase()),
       ),
     [notes, query],
   );
@@ -30,7 +31,7 @@ export default function NotesScreen() {
         mode="outlined"
         value={query}
         onChangeText={setQuery}
-        placeholder="Buscar en notas"
+        placeholder="Buscar pastel o estado"
         left={<TextInput.Icon icon="magnify" />}
       />
 
@@ -49,8 +50,8 @@ export default function NotesScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text variant="headlineSmall">No hay notas todavía</Text>
-            <Text variant="bodyMedium">Toca el icono + para crear la primera.</Text>
+            <Text variant="headlineSmall">Sin pasteles en reposicion</Text>
+            <Text variant="bodyMedium">Crea el primer registro para controlar stock y fechas.</Text>
           </View>
         }
       />

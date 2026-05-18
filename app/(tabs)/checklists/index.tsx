@@ -32,7 +32,7 @@ export default function ChecklistsScreen() {
         mode="outlined"
         value={query}
         onChangeText={setQuery}
-        placeholder="Buscar en tareas"
+        placeholder="Buscar pedido"
         left={<TextInput.Icon icon="magnify" />}
       />
 
@@ -53,8 +53,8 @@ export default function ChecklistsScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text variant="headlineSmall">No hay tareas aún</Text>
-            <Text variant="bodyMedium">Crea un checklist para empezar a tachar avances.</Text>
+            <Text variant="headlineSmall">No hay pedidos todavía</Text>
+            <Text variant="bodyMedium">Registra pedidos con fecha de envio para dar seguimiento.</Text>
           </View>
         }
       />

@@ -25,14 +25,14 @@ export default function ArchivedScreen() {
         mode="outlined"
         value={query}
         onChangeText={setQuery}
-        placeholder="Buscar archivadas"
+        placeholder="Buscar historial"
         left={<TextInput.Icon icon="magnify" />}
       />
 
       <FlashList
         data={filtered}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={110}
+        {...({ estimatedItemSize: 110 } as any)}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <Card style={styles.card} mode="outlined">
@@ -41,7 +41,7 @@ export default function ArchivedScreen() {
               <View style={styles.row}>
                 <Chip compact>{item.type}</Chip>
                 <Text variant="labelSmall">
-                  Archivada: {new Date(item.archivedAt).toLocaleDateString("es-ES")}
+                  Movido: {new Date(item.archivedAt).toLocaleDateString("es-ES")}
                 </Text>
               </View>
               {isTextNote(item.data) && (
@@ -64,8 +64,8 @@ export default function ArchivedScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text variant="headlineSmall">No tienes elementos archivados</Text>
-            <Text variant="bodyMedium">Cuando archives algo, aparecerá aquí.</Text>
+            <Text variant="headlineSmall">No hay historial</Text>
+            <Text variant="bodyMedium">Cuando muevas un registro al historial aparecera aqui.</Text>
           </View>
         }
       />

@@ -15,13 +15,13 @@ export default function NoteDetailScreen() {
   if (!note) {
     return (
       <View style={styles.center}>
-        <Text variant="headlineSmall">Nota no encontrada</Text>
+        <Text variant="headlineSmall">Registro no encontrado</Text>
       </View>
     );
   }
 
   const confirmDelete = () => {
-    Alert.alert("Eliminar nota", "Esta acción no se puede deshacer", [
+    Alert.alert("Eliminar registro", "Esta accion no se puede deshacer", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
@@ -41,7 +41,15 @@ export default function NoteDetailScreen() {
         <Card.Content>
           <Text variant="headlineMedium">{note.title}</Text>
           <Text variant="bodyMedium" style={styles.date}>
-            {new Date(note.updatedAt).toLocaleString("es-ES")}
+            Creado: {new Date(note.createdAt).toLocaleString("es-ES")}
+          </Text>
+          <Text variant="bodyMedium" style={styles.date}>
+            Estado: {(note.status ?? "hay-pocos").replace("-", " ")}
+          </Text>
+          <Text variant="bodyMedium" style={styles.date}>
+            {note.expiresAt
+              ? `Caducidad: ${new Date(note.expiresAt).toLocaleDateString("es-ES")}`
+              : "Caducidad: sin fecha"}
           </Text>
           <Text variant="bodyLarge" style={styles.content}>
             {note.content}
@@ -59,7 +67,7 @@ export default function NoteDetailScreen() {
         }}
         style={styles.button}
       >
-        Archivar
+        Mover a historial
       </Button>
       <Button mode="contained" buttonColor="#B7483C" onPress={confirmDelete} style={styles.button}>
         Eliminar
