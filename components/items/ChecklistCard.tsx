@@ -23,9 +23,11 @@ const ChecklistCardComponent = ({ checklist, onPress }: ChecklistCardProps) => {
         </Text>
         <View style={styles.row}>
           <Text variant="bodySmall">
-            {completed}/{total} completadas
+            Pedido: {completed}/{total} items listos
           </Text>
-          <Text variant="labelSmall">{formatDate(checklist.updatedAt)}</Text>
+          <Text variant="labelSmall">
+            Entrega: {checklist.deliveryDate ? formatDate(checklist.deliveryDate) : "sin fecha"}
+          </Text>
         </View>
         <ProgressBar progress={progress} style={styles.progress} />
       </Card.Content>

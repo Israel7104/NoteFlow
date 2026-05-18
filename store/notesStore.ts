@@ -120,7 +120,20 @@ export const useNotesStore = create<NotesStore>()(
     }),
     {
       name: "noteflow-storage",
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState) => {
+        const state = persistedState as Partial<NotesStore> | undefined;
+        if (!state) return persistedState as NotesStore;
+
+        return {
+          ...state,
+          notes: (state.notes ?? []).map((note) => ({
+            ...note,
+            status: note.status ?? "hay-pocos",
+          })),
+        } as NotesStore;
+      },
       partialize: (state) => ({
         notes: state.notes,
         checklists: state.checklists,

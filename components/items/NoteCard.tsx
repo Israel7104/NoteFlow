@@ -17,10 +17,11 @@ const NoteCardComponent = ({ note, onPress }: NoteCardProps) => (
         {note.title}
       </Text>
       <Text variant="bodyMedium" numberOfLines={2} style={styles.preview}>
-        {note.content}
+        Estado: {(note.status ?? "hay-pocos").replace("-", " ")} • {note.content}
       </Text>
       <Text variant="labelSmall" style={styles.meta}>
-        Actualizada: {formatDate(note.updatedAt)}
+        Creada: {formatDate(note.createdAt)}
+        {note.expiresAt ? ` • Caduca: ${formatDate(note.expiresAt)}` : ""}
       </Text>
     </Card.Content>
   </Card>
