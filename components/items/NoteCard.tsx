@@ -35,10 +35,8 @@ const styles = StyleSheet.create({
   },
   preview: {
     marginTop: 8,
-    opacity: 0.8,
   },
   meta: {
     marginTop: 10,
-    opacity: 0.6,
   },
 });

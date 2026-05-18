@@ -2,7 +2,7 @@ import { z } from "zod";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Button, HelperText, SegmentedButtons, Text, TextInput } from "react-native-paper";
+import { Button, HelperText, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 
 import { useNotesStore } from "../store/notesStore";
 import type { ChecklistItem, ChecklistNote, Note, RestockStatus } from "../types";
@@ -25,12 +25,33 @@ type FormType = "restock" | "order";
 const parseDate = (raw: string) => {
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
+
+  const ddmmyyyyMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (ddmmyyyyMatch) {
+    const [, dayRaw, monthRaw, yearRaw] = ddmmyyyyMatch;
+    const day = Number(dayRaw);
+    const month = Number(monthRaw);
+    const year = Number(yearRaw);
+    const candidate = new Date(year, month - 1, day);
+
+    if (
+      candidate.getFullYear() === year &&
+      candidate.getMonth() === month - 1 &&
+      candidate.getDate() === day
+    ) {
+      return candidate;
+    }
+
+    return undefined;
+  }
+
   const value = new Date(trimmed);
   return Number.isNaN(value.getTime()) ? undefined : value;
 };
 
 export default function NewNoteModal() {
   const router = useRouter();
+  const theme = useTheme();
 
   const addNote = useNotesStore((state) => state.addNote);
   const addChecklist = useNotesStore((state) => state.addChecklist);
@@ -130,7 +151,9 @@ export default function NewNoteModal() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text variant="titleLarge">Nuevo registro de pasteleria</Text>
+        <Text variant="titleLarge" style={{ color: theme.colors.onBackground, fontWeight: "700" }}>
+          Nuevo registro de pasteleria
+        </Text>
 
         <SegmentedButtons
           value={type}
@@ -139,8 +162,32 @@ export default function NewNoteModal() {
             setErrors({});
           }}
           buttons={[
-            { value: "restock", label: "Reposicion" },
-            { value: "order", label: "Pedido" },
+            {
+              value: "restock",
+              label: "Reposicion",
+              style: {
+                backgroundColor:
+                  type === "restock" ? theme.colors.primaryContainer : theme.colors.surface,
+              },
+              labelStyle: {
+                color:
+                  type === "restock" ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                fontWeight: "600",
+              },
+            },
+            {
+              value: "order",
+              label: "Pedido",
+              style: {
+                backgroundColor:
+                  type === "order" ? theme.colors.primaryContainer : theme.colors.surface,
+              },
+              labelStyle: {
+                color:
+                  type === "order" ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                fontWeight: "600",
+              },
+            },
           ]}
         />
 
@@ -161,10 +208,62 @@ export default function NewNoteModal() {
               value={status}
               onValueChange={(value) => setStatus(value as RestockStatus)}
               buttons={[
-                { value: "faltan", label: "Faltan" },
-                { value: "hay-pocos", label: "Hay pocos" },
-                { value: "hay-muchos", label: "Hay muchos" },
-                { value: "pasados", label: "Pasados" },
+                {
+                  value: "faltan",
+                  label: "Faltan",
+                  style: {
+                    backgroundColor:
+                      status === "faltan" ? theme.colors.primaryContainer : theme.colors.surface,
+                  },
+                  labelStyle: {
+                    color:
+                      status === "faltan" ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                    fontWeight: "600",
+                  },
+                },
+                {
+                  value: "hay-pocos",
+                  label: "Hay pocos",
+                  style: {
+                    backgroundColor:
+                      status === "hay-pocos" ? theme.colors.primaryContainer : theme.colors.surface,
+                  },
+                  labelStyle: {
+                    color:
+                      status === "hay-pocos"
+                        ? theme.colors.onPrimaryContainer
+                        : theme.colors.onSurface,
+                    fontWeight: "600",
+                  },
+                },
+                {
+                  value: "hay-muchos",
+                  label: "Hay muchos",
+                  style: {
+                    backgroundColor:
+                      status === "hay-muchos" ? theme.colors.primaryContainer : theme.colors.surface,
+                  },
+                  labelStyle: {
+                    color:
+                      status === "hay-muchos"
+                        ? theme.colors.onPrimaryContainer
+                        : theme.colors.onSurface,
+                    fontWeight: "600",
+                  },
+                },
+                {
+                  value: "pasados",
+                  label: "Pasados",
+                  style: {
+                    backgroundColor:
+                      status === "pasados" ? theme.colors.primaryContainer : theme.colors.surface,
+                  },
+                  labelStyle: {
+                    color:
+                      status === "pasados" ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                    fontWeight: "600",
+                  },
+                },
               ]}
             />
 
@@ -182,7 +281,7 @@ export default function NewNoteModal() {
 
             <TextInput
               mode="outlined"
-              label="Fecha de caducidad (YYYY-MM-DD)"
+              label="Fecha de caducidad (DD/MM/YYYY)"
               value={expiresAtText}
               onChangeText={setExpiresAtText}
             />
@@ -193,7 +292,7 @@ export default function NewNoteModal() {
           <>
             <TextInput
               mode="outlined"
-              label="Fecha de envio (YYYY-MM-DD)"
+              label="Fecha de envio (DD/MM/YYYY)"
               value={deliveryDateText}
               onChangeText={setDeliveryDateText}
             />

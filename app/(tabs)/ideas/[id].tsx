@@ -44,7 +44,6 @@ export default function IdeaDetailScreen() {
 
       <Button
         mode="contained"
-        buttonColor="#B7483C"
         onPress={() => {
           Alert.alert("Eliminar idea", "¿Seguro que quieres eliminarla?", [
             { text: "Cancelar", style: "cancel" },

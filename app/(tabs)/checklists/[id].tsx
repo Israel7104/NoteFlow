@@ -65,7 +65,6 @@ export default function ChecklistDetailScreen() {
 
       <Button
         mode="contained"
-        buttonColor="#B7483C"
         onPress={() => {
           Alert.alert("Eliminar pedido", "¿Seguro que quieres eliminarlo?", [
             { text: "Cancelar", style: "cancel" },

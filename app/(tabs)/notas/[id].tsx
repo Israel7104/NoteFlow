@@ -69,7 +69,7 @@ export default function NoteDetailScreen() {
       >
         Mover a historial
       </Button>
-      <Button mode="contained" buttonColor="#B7483C" onPress={confirmDelete} style={styles.button}>
+      <Button mode="contained" onPress={confirmDelete} style={styles.button}>
         Eliminar
       </Button>
     </View>
@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
   },
   date: {
     marginTop: 8,
-    opacity: 0.7,
   },
   content: {
     marginTop: 16,
