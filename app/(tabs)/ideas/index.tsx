@@ -7,6 +7,7 @@ import { Text, TextInput } from "react-native-paper";
 
 import { IdeaCard } from "../../../components/items/IdeaCard";
 import { useNotesStore } from "../../../store/notesStore";
+import type { IdeaNote } from "../../../types";
 
 export default function IdeasScreen() {
   const ideas = useNotesStore((state) => state.ideas);
@@ -33,10 +34,10 @@ export default function IdeasScreen() {
         left={<TextInput.Icon icon="magnify" />}
       />
 
-      <FlashList
+      <FlashList<IdeaNote>
         data={filtered}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={128}
+        {...({ estimatedItemSize: 128 } as any)}
         contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(index * 45)} exiting={FadeOutLeft}>
