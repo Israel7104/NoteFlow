@@ -57,7 +57,7 @@ export const lightTheme: Partial<MD3Theme> = {
     error: palette.gray700,
     onError: palette.white,
     background: palette.gray050,
-    onBackground: palette.gray900,
+    onBackground: palette.black,
     surface: palette.white,
     onSurface: palette.gray900,
     surfaceVariant: palette.gray100,

@@ -8,6 +8,11 @@ export default function TabsLayout() {
       screenOptions={{
         headerTitleStyle: { fontWeight: "700" },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
+        tabBarStyle: {
+          height: 68,
+          paddingTop: 6,
+          paddingBottom: 10,
+        },
         headerRight: () => (
           <Link href={{ pathname: "/nueva-note" }} asChild>
             <TouchableOpacity style={{ marginRight: 16 }}>

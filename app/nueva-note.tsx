@@ -151,7 +151,7 @@ export default function NewNoteModal() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text variant="titleLarge" style={{ color: theme.colors.onBackground, fontWeight: "700" }}>
+        <Text variant="titleLarge" style={{ color: theme.colors.primary, fontWeight: "700" }}>
           Nuevo registro de pasteleria
         </Text>
 
