@@ -5,8 +5,12 @@ export interface BaseNote {
   updatedAt: Date;
 }
 
+export type RestockStatus = "faltan" | "hay-pocos" | "hay-muchos" | "pasados";
+
 export interface Note extends BaseNote {
   content: string;
+  status: RestockStatus;
+  expiresAt?: Date;
 }
 
 export interface ChecklistItem {
@@ -17,6 +21,7 @@ export interface ChecklistItem {
 
 export interface ChecklistNote extends BaseNote {
   items: ChecklistItem[];
+  deliveryDate?: Date;
 }
 
 export interface IdeaNote extends BaseNote {

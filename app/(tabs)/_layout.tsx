@@ -8,6 +8,11 @@ export default function TabsLayout() {
       screenOptions={{
         headerTitleStyle: { fontWeight: "700" },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
+        tabBarStyle: {
+          height: 68,
+          paddingTop: 6,
+          paddingBottom: 10,
+        },
         headerRight: () => (
           <Link href={{ pathname: "/nueva-note" }} asChild>
             <TouchableOpacity style={{ marginRight: 16 }}>
@@ -20,28 +25,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="notas"
         options={{
-          title: "Notas",
+          title: "Reposicion",
           tabBarIcon: ({ color, size }) => <MaterialIcons name="notes" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="checklists"
         options={{
-          title: "Tareas",
+          title: "Pedidos",
           tabBarIcon: ({ color, size }) => <FontAwesome6 name="list-check" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="ideas"
         options={{
-          title: "Ideas",
+          title: "Alertas",
           tabBarIcon: ({ color, size }) => <MaterialIcons name="lightbulb" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="archivadas"
         options={{
-          title: "Archivadas",
+          title: "Historial",
           tabBarIcon: ({ color, size }) => <MaterialIcons name="archive" size={size} color={color} />,
         }}
       />

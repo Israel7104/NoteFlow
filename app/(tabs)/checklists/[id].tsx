@@ -17,7 +17,7 @@ export default function ChecklistDetailScreen() {
   if (!checklist) {
     return (
       <View style={styles.center}>
-        <Text variant="headlineSmall">Checklist no encontrado</Text>
+        <Text variant="headlineSmall">Pedido no encontrado</Text>
       </View>
     );
   }
@@ -32,6 +32,14 @@ export default function ChecklistDetailScreen() {
   return (
     <View style={styles.container}>
       <Text variant="headlineMedium">{checklist.title}</Text>
+      <Text variant="bodyMedium" style={styles.meta}>
+        Creado: {new Date(checklist.createdAt).toLocaleDateString("es-ES")}
+      </Text>
+      <Text variant="bodyMedium" style={styles.meta}>
+        {checklist.deliveryDate
+          ? `Envio: ${new Date(checklist.deliveryDate).toLocaleDateString("es-ES")}`
+          : "Envio: sin fecha"}
+      </Text>
       {checklist.items.map((item) => (
         <List.Item
           key={item.id}
@@ -52,14 +60,13 @@ export default function ChecklistDetailScreen() {
           router.back();
         }}
       >
-        Archivar
+        Mover a historial
       </Button>
 
       <Button
         mode="contained"
-        buttonColor="#B7483C"
         onPress={() => {
-          Alert.alert("Eliminar checklist", "¿Seguro que quieres eliminarlo?", [
+          Alert.alert("Eliminar pedido", "¿Seguro que quieres eliminarlo?", [
             { text: "Cancelar", style: "cancel" },
             {
               text: "Eliminar",
@@ -84,6 +91,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 8,
+  },
+  meta: {
+    opacity: 0.75,
   },
   center: {
     flex: 1,

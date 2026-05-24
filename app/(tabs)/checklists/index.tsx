@@ -7,6 +7,7 @@ import { Text, TextInput } from "react-native-paper";
 
 import { ChecklistCard } from "../../../components/items/ChecklistCard";
 import { useNotesStore } from "../../../store/notesStore";
+import type { ChecklistNote } from "../../../types";
 
 export default function ChecklistsScreen() {
   const checklists = useNotesStore((state) => state.checklists);
@@ -31,14 +32,14 @@ export default function ChecklistsScreen() {
         mode="outlined"
         value={query}
         onChangeText={setQuery}
-        placeholder="Buscar en tareas"
+        placeholder="Buscar pedido"
         left={<TextInput.Icon icon="magnify" />}
       />
 
-      <FlashList
+      <FlashList<ChecklistNote>
         data={filtered}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={116}
+        {...({ estimatedItemSize: 116 } as any)}
         contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(index * 45)} exiting={FadeOutLeft}>
@@ -52,8 +53,8 @@ export default function ChecklistsScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text variant="headlineSmall">No hay tareas aún</Text>
-            <Text variant="bodyMedium">Crea un checklist para empezar a tachar avances.</Text>
+            <Text variant="headlineSmall">No hay pedidos todavía</Text>
+            <Text variant="bodyMedium">Registra pedidos con fecha de envio para dar seguimiento.</Text>
           </View>
         }
       />
