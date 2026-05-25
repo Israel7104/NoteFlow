@@ -22,7 +22,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.beecakes.noteflow"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,6 +32,12 @@
       "expo-router",
       "expo-secure-store",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "19ede769-8c3a-4bd4-b699-1611251b0aaa"
+      }
+    }
   }
 }
