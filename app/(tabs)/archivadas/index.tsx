@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { Card, Chip, Text, TextInput } from "react-native-paper";
 
 import { useNotesStore } from "../../../store/notesStore";
+import type { ArchivedItem } from "../../../types";
 import { isChecklistNote, isIdeaNote, isTextNote } from "../../../types";
 
 export default function ArchivedScreen() {
@@ -29,7 +30,7 @@ export default function ArchivedScreen() {
         left={<TextInput.Icon icon="magnify" />}
       />
 
-      <FlashList
+      <FlashList<ArchivedItem>
         data={filtered}
         keyExtractor={(item) => item.id}
         {...({ estimatedItemSize: 110 } as any)}
@@ -51,7 +52,8 @@ export default function ArchivedScreen() {
               )}
               {isChecklistNote(item.data) && (
                 <Text variant="bodySmall" style={styles.preview}>
-                  {item.data.items.filter((i) => i.isCompleted).length}/{item.data.items.length} tareas
+                  {item.data.items.filter((i: { isCompleted: boolean }) => i.isCompleted).length}/
+                  {item.data.items.length} tareas
                 </Text>
               )}
               {isIdeaNote(item.data) && (

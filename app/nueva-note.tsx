@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "re
 import { Button, HelperText, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 
 import { useNotesStore } from "../store/notesStore";
-import type { ChecklistItem, ChecklistNote, Note, RestockStatus } from "../types";
+import type { RestockStatus } from "../types";
 
 const restockSchema = z.object({
   title: z.string().min(3, "El nombre del pastel debe tener al menos 3 caracteres"),
@@ -53,8 +53,9 @@ export default function NewNoteModal() {
   const router = useRouter();
   const theme = useTheme();
 
-  const addNote = useNotesStore((state) => state.addNote);
-  const addChecklist = useNotesStore((state) => state.addChecklist);
+  const createRestockNote = useNotesStore((state) => state.createRestockNote);
+  const createChecklist = useNotesStore((state) => state.createChecklist);
+  const isLoading = useNotesStore((state) => state.isLoading);
 
   const [type, setType] = useState<FormType>("restock");
   const [title, setTitle] = useState("");
@@ -65,8 +66,6 @@ export default function NewNoteModal() {
   const [itemText, setItemText] = useState("");
   const [items, setItems] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const createId = () => `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   const reset = () => {
     setTitle("");
@@ -79,7 +78,7 @@ export default function NewNoteModal() {
     setErrors({});
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (type === "restock") {
       const result = restockSchema.safeParse({
         title,
@@ -97,19 +96,22 @@ export default function NewNoteModal() {
         return;
       }
 
-      const payload: Note = {
-        id: createId(),
-        title,
-        content,
-        status,
-        expiresAt: parseDate(expiresAtText),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      try {
+        await createRestockNote({
+          title,
+          content,
+          status,
+          expiresAt: parseDate(expiresAtText),
+        });
 
-      addNote(payload);
-      reset();
-      router.back();
+        reset();
+        router.back();
+      } catch (error) {
+        setErrors((prev) => ({
+          ...prev,
+          submit: error instanceof Error ? error.message : "No se pudo crear la nota",
+        }));
+      }
       return;
     }
 
@@ -128,24 +130,21 @@ export default function NewNoteModal() {
       return;
     }
 
-    const orderItems: ChecklistItem[] = items.map((text) => ({
-      id: createId(),
-      text,
-      isCompleted: false,
-    }));
+    try {
+      await createChecklist({
+        title,
+        itemTexts: items,
+        deliveryDate: parseDate(deliveryDateText),
+      });
 
-    const payload: ChecklistNote = {
-      id: createId(),
-      title,
-      items: orderItems,
-      deliveryDate: parseDate(deliveryDateText),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    addChecklist(payload);
-    reset();
-    router.back();
+      reset();
+      router.back();
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        submit: error instanceof Error ? error.message : "No se pudo crear el pedido",
+      }));
+    }
   };
 
   return (
@@ -329,7 +328,11 @@ export default function NewNoteModal() {
           </>
         )}
 
-        <Button mode="contained" onPress={submit}>
+        <HelperText type="error" visible={Boolean(errors.submit)}>
+          {errors.submit}
+        </HelperText>
+
+        <Button mode="contained" onPress={() => void submit()} loading={isLoading} disabled={isLoading}>
           Guardar
         </Button>
       </ScrollView>

@@ -23,9 +23,13 @@ export default function ChecklistDetailScreen() {
   }
 
   const onToggle = async (itemId: string) => {
-    const completedAll = toggleChecklistItem(checklist.id, itemId);
-    if (completedAll) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      const completedAll = await toggleChecklistItem(checklist.id, itemId);
+      if (completedAll) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      Alert.alert("Error", error instanceof Error ? error.message : "No se pudo actualizar el item");
     }
   };
 
@@ -55,9 +59,13 @@ export default function ChecklistDetailScreen() {
         mode="contained-tonal"
         icon="archive"
         onPress={async () => {
-          archiveChecklist(checklist.id);
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.back();
+          try {
+            await archiveChecklist(checklist.id);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.back();
+          } catch (error) {
+            Alert.alert("Error", error instanceof Error ? error.message : "No se pudo archivar");
+          }
         }}
       >
         Mover a historial
@@ -72,9 +80,13 @@ export default function ChecklistDetailScreen() {
               text: "Eliminar",
               style: "destructive",
               onPress: async () => {
-                deleteChecklist(checklist.id);
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.back();
+                try {
+                  await deleteChecklist(checklist.id);
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.back();
+                } catch (error) {
+                  Alert.alert("Error", error instanceof Error ? error.message : "No se pudo eliminar");
+                }
               },
             },
           ]);

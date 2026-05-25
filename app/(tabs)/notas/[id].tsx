@@ -27,9 +27,13 @@ export default function NoteDetailScreen() {
         text: "Eliminar",
         style: "destructive",
         onPress: async () => {
-          deleteNote(note.id);
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.back();
+          try {
+            await deleteNote(note.id);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.back();
+          } catch (error) {
+            Alert.alert("Error", error instanceof Error ? error.message : "No se pudo eliminar");
+          }
         },
       },
     ]);
@@ -61,9 +65,13 @@ export default function NoteDetailScreen() {
         mode="contained-tonal"
         icon="archive"
         onPress={async () => {
-          archiveNote(note.id);
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.back();
+          try {
+            await archiveNote(note.id);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.back();
+          } catch (error) {
+            Alert.alert("Error", error instanceof Error ? error.message : "No se pudo archivar");
+          }
         }}
         style={styles.button}
       >
