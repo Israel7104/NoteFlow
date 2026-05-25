@@ -1,101 +1,134 @@
-<img src="https://img.shields.io/badge/Expo-000020?style=for-the-badge&amp;logo=expo&amp;logoColor=white" alt="Expo">
+# NoteFlow
 
-<img src="https://img.shields.io/badge/React_Native-05122A?style=for-the-badge&amp;logo=react" alt="React Native">
+Aplicacion movil y web para gestionar reposicion, pedidos y alertas de pasteleria.
 
-<img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&amp;logo=TypeScript&amp;logoColor=FFF" alt="TypeScript">
+[![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
+[![React Native](https://img.shields.io/badge/React_Native-05122A?style=for-the-badge&logo=react)](https://reactnative.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=fff)](https://www.typescriptlang.org/)
+[![Expo Router](https://img.shields.io/badge/Expo_Router-000000?style=for-the-badge&logo=expo&logoColor=white)](https://docs.expo.dev/router/introduction/)
+[![Zustand](https://img.shields.io/badge/Zustand-443E38?style=for-the-badge)](https://zustand-demo.pmnd.rs/)
+[![FlashList](https://img.shields.io/badge/FlashList-00C4B3?style=for-the-badge)](https://shopify.github.io/flash-list/)
+[![React Native Paper](https://img.shields.io/badge/React_Native_Paper-6200EE?style=for-the-badge)](https://callstack.github.io/react-native-paper/)
+[![EAS Build](https://img.shields.io/badge/EAS_Build-000020?style=for-the-badge&logo=expo&logoColor=white)](https://docs.expo.dev/build/introduction/)
 
-<img src="https://img.shields.io/badge/Expo_Router-000000?style=for-the-badge&amp;logo=expo&amp;logoColor=white" alt="Expo Router">
+## Resumen
 
-<img src="https://img.shields.io/badge/Zustand-443E38?style=for-the-badge" alt="Zustand">
+- Autenticacion con registro e inicio de sesion.
+- Notas de reposicion con estado y fecha de caducidad.
+- Checklists de pedidos con items completables.
+- Ideas/alertas y seccion de archivados.
+- Busqueda en tiempo real.
+- Persistencia local + sincronizacion con API REST.
 
-<img src="https://img.shields.io/badge/AsyncStorage-3178C6?style=for-the-badge" alt="AsyncStorage">
+## Stack
 
-<img src="https://img.shields.io/badge/React_Native_Paper-6200EE?style=for-the-badge" alt="React Native Paper">
+| Area | Tecnologia | Uso |
+|---|---|---|
+| App | Expo + React Native | Base multiplataforma |
+| Navegacion | Expo Router | Ruteo por archivos |
+| Estado | Zustand + persist | Estado global e hidratacion |
+| Persistencia | AsyncStorage + SecureStore | Datos locales y token |
+| UI | React Native Paper | Componentes visuales |
+| Listas | FlashList | Render de listas performante |
+| Validacion | Zod | Validacion de formularios |
+| Build | EAS Build | APK/AAB/IPA |
 
-<img src="https://img.shields.io/badge/FlashList-00C4B3?style=for-the-badge" alt="FlashList">
+## Estructura
 
-<img src="https://img.shields.io/badge/Zod-3E67B1?style=for-the-badge" alt="Zod">
+```text
+app/
+	auth.tsx
+	nueva-note.tsx
+	(tabs)/
+		notas/
+		checklists/
+		ideas/
+		archivadas/
+components/
+	items/
+store/
+	notesStore.ts
+lib/
+	api.ts
+	tokenStorage.ts
+types/
+constants/
+docs/
+```
 
-<img src="https://img.shields.io/badge/EAS_Build-000020?style=for-the-badge&amp;logo=expo&amp;logoColor=white" alt="EAS Build">
+## Requisitos
 
-📝 NoteFlow
-Gestión ágil de notas, pedidos y alertas para operación diaria de pastelería.
+- Node.js 18+
+- npm 9+
+- Expo CLI (via npx)
 
-Aplicación móvil y web con autenticación, persistencia local y sincronización con API REST para registrar reposición, checklists y alertas en tiempo real.
+## Ejecutar en local
 
-Despliegue	URL
-Frontend móvil/web	Expo
-Backend API	Configurable por variable EXPO_PUBLIC_API_URL
-Características
-Autenticación con registro e inicio de sesión
-Gestión de notas de reposición con estado y caducidad
-Checklists de pedidos con ítems completables
-Sección de ideas y alertas archivables
-Búsqueda en tiempo real en cada módulo
-Persistencia local con hidratación de estado
-Feedback táctil en acciones clave
-Tecnologías
-Frontend	Uso
-Expo + React Native	Base de aplicación multiplataforma
-TypeScript estricto	Tipado y seguridad de desarrollo
-Expo Router	Navegación por rutas
-React Native Paper	Sistema visual y componentes UI
-FlashList	Renderizado eficiente de listas
-Estado y datos	Uso
-Zustand	Estado global y acciones de negocio
-AsyncStorage	Persistencia local del estado
-Secure Store	Almacenamiento seguro de token
-Zod	Validación de formularios y contratos
-Backend e integración	Uso
-API REST NoteFlow	CRUD de notas, checklists e ideas
-JWT Bearer Token	Autenticación en endpoints protegidos
-EAS Build	Generación de builds Android/iOS
-Estructura del proyecto
-project/
-├── app/
-│ ├── auth.tsx
-│ ├── nueva-note.tsx
-│ └── (tabs)/
-│ ├── notas/
-│ ├── checklists/
-│ ├── ideas/
-│ └── archivadas/
-├── components/
-│ └── items/
-├── store/
-│ └── notesStore.ts
-├── lib/
-│ ├── api.ts
-│ └── tokenStorage.ts
-├── types/
-├── constants/
-├── docs/
-├── app.json
-├── package.json
-└── README.md
+1. Instalar dependencias:
 
-Descargar y ejecutar
-Clonar repositorio
-Instalar dependencias
-Configurar variables de entorno
-Iniciar Expo
-Comandos:
+```bash
 npm install
-npm run start
+```
 
-Crear archivo .env con:
+2. Crear archivo `.env` en la raiz:
+
+```bash
 EXPO_PUBLIC_API_URL=http://localhost:3000
+```
 
-Build ejecutable
-Android
-APK de prueba con EAS Build
-AAB para Google Play con perfil de producción
-iOS
-Build IPA con EAS Build
-Distribución por TestFlight/App Store
-Roadmap
-Mejorar métricas y observabilidad de sincronización
-Reintroducir animaciones seguras para Android Expo Go
-Tests de integración para flujo de creación y refresco
-Modo offline con cola de sincronización
-Desarrollado como proyecto de práctica y evolución continua de producto.
+3. Iniciar proyecto:
+
+```bash
+npm run start
+```
+
+Opcional:
+
+```bash
+npm run android
+npm run ios
+npm run web
+```
+
+## Build ejecutable
+
+1. Configurar EAS (una sola vez):
+
+```bash
+npx eas build:configure
+```
+
+2. Android APK (pruebas):
+
+```bash
+npx eas build -p android --profile preview
+```
+
+3. Android AAB (Google Play):
+
+```bash
+npx eas build -p android --profile production
+```
+
+4. iOS (IPA/TestFlight):
+
+```bash
+npx eas build -p ios --profile production
+```
+
+## Notas
+
+- Si cambias dependencias nativas y usas Expo Go, reinicia con cache limpia:
+
+```bash
+npx expo start -c
+```
+
+- La API se consume con `Authorization: Bearer <token>`.
+
+## Roadmap
+
+- Mejorar observabilidad de sincronizacion.
+- Reintroducir animaciones seguras para Android Expo Go.
+- Agregar tests de integracion en flujos criticos.
+- Explorar modo offline con cola de sincronizacion.
