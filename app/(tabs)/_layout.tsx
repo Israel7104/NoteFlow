@@ -1,6 +1,7 @@
 import { FontAwesome6, MaterialIcons } from "@expo/vector-icons";
 import { Link, Redirect, Tabs } from "expo-router";
 import { Alert, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useNotesStore, useStoreHydrated } from "../../store/notesStore";
 
@@ -8,6 +9,8 @@ export default function TabsLayout() {
   const hasHydrated = useStoreHydrated();
   const token = useNotesStore((state) => state.token);
   const logout = useNotesStore((state) => state.logout);
+  const insets = useSafeAreaInsets();
+  const tabBarBottomInset = Math.max(insets.bottom, 10);
 
   if (!hasHydrated) {
     return null;
@@ -23,9 +26,9 @@ export default function TabsLayout() {
         headerTitleStyle: { fontWeight: "700" },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
         tabBarStyle: {
-          height: 68,
+          height: 58 + tabBarBottomInset,
           paddingTop: 6,
-          paddingBottom: 10,
+          paddingBottom: tabBarBottomInset,
         },
         headerLeft: () => (
           <TouchableOpacity
