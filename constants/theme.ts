@@ -56,6 +56,8 @@ export const lightTheme: Partial<MD3Theme> = {
     onTertiaryContainer: palette.gray900,
     error: palette.gray700,
     onError: palette.white,
+    errorContainer: palette.gray300,
+    onErrorContainer: palette.gray900,
     background: palette.gray050,
     onBackground: palette.black,
     surface: palette.white,
@@ -63,6 +65,7 @@ export const lightTheme: Partial<MD3Theme> = {
     surfaceVariant: palette.gray100,
     onSurfaceVariant: palette.gray600,
     outline: palette.gray400,
+    outlineVariant: palette.gray200,
     elevation: {
       level0: "transparent",
       level1: palette.gray050,
@@ -99,6 +102,8 @@ export const darkTheme: Partial<MD3Theme> = {
     onTertiaryContainer: palette.gray100,
     error: palette.gray300,
     onError: palette.gray900,
+    errorContainer: palette.gray700,
+    onErrorContainer: palette.gray100,
     background: palette.gray900,
     onBackground: palette.gray100,
     surface: palette.gray800,
@@ -106,6 +111,7 @@ export const darkTheme: Partial<MD3Theme> = {
     surfaceVariant: palette.gray700,
     onSurfaceVariant: palette.gray300,
     outline: palette.gray500,
+    outlineVariant: palette.gray700,
     elevation: {
       level0: "transparent",
       level1: "#242424",

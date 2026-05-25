@@ -1,8 +1,22 @@
 import { FontAwesome6, MaterialIcons } from "@expo/vector-icons";
-import { Link, Tabs } from "expo-router";
-import { TouchableOpacity } from "react-native";
+import { Link, Redirect, Tabs } from "expo-router";
+import { Alert, TouchableOpacity } from "react-native";
+
+import { useNotesStore, useStoreHydrated } from "../../store/notesStore";
 
 export default function TabsLayout() {
+  const hasHydrated = useStoreHydrated();
+  const token = useNotesStore((state) => state.token);
+  const logout = useNotesStore((state) => state.logout);
+
+  if (!hasHydrated) {
+    return null;
+  }
+
+  if (!token) {
+    return <Redirect href="/auth" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -13,6 +27,25 @@ export default function TabsLayout() {
           paddingTop: 6,
           paddingBottom: 10,
         },
+        headerLeft: () => (
+          <TouchableOpacity
+            style={{ marginLeft: 16 }}
+            onPress={() => {
+              Alert.alert("Cerrar sesion", "Se cerrara tu sesion en este dispositivo", [
+                { text: "Cancelar", style: "cancel" },
+                {
+                  text: "Salir",
+                  style: "destructive",
+                  onPress: () => {
+                    void logout();
+                  },
+                },
+              ]);
+            }}
+          >
+            <MaterialIcons name="logout" size={22} />
+          </TouchableOpacity>
+        ),
         headerRight: () => (
           <Link href={{ pathname: "/nueva-note" }} asChild>
             <TouchableOpacity style={{ marginRight: 16 }}>
