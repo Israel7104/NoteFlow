@@ -1,6 +1,7 @@
 import { z } from "zod";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Button, HelperText, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 
@@ -11,7 +12,6 @@ const restockSchema = z.object({
   title: z.string().min(3, "El nombre del pastel debe tener al menos 3 caracteres"),
   status: z.enum(["faltan", "hay-pocos", "hay-muchos", "pasados"]),
   content: z.string().min(1, "Agrega un detalle corto"),
-  expiresAt: z.string().optional(),
 });
 
 const orderSchema = z.object({
@@ -49,6 +49,21 @@ const parseDate = (raw: string) => {
   return Number.isNaN(value.getTime()) ? undefined : value;
 };
 
+const formatShortDate = (value: Date) => {
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(value);
+};
+
+const toHtmlDateValue = (value: Date) => {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function NewNoteModal() {
   const router = useRouter();
   const theme = useTheme();
@@ -61,7 +76,8 @@ export default function NewNoteModal() {
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<RestockStatus>("faltan");
   const [content, setContent] = useState("");
-  const [expiresAtText, setExpiresAtText] = useState("");
+  const [expiresAtDate, setExpiresAtDate] = useState<Date | undefined>(undefined);
+  const [showExpiresAtPicker, setShowExpiresAtPicker] = useState(false);
   const [deliveryDateText, setDeliveryDateText] = useState("");
   const [itemText, setItemText] = useState("");
   const [items, setItems] = useState<string[]>([]);
@@ -71,7 +87,8 @@ export default function NewNoteModal() {
     setTitle("");
     setStatus("faltan");
     setContent("");
-    setExpiresAtText("");
+    setExpiresAtDate(undefined);
+    setShowExpiresAtPicker(false);
     setDeliveryDateText("");
     setItemText("");
     setItems([]);
@@ -84,7 +101,6 @@ export default function NewNoteModal() {
         title,
         status,
         content,
-        expiresAt: expiresAtText,
       });
 
       if (!result.success) {
@@ -101,7 +117,7 @@ export default function NewNoteModal() {
           title,
           content,
           status,
-          expiresAt: parseDate(expiresAtText),
+          expiresAt: expiresAtDate,
         });
 
         reset();
@@ -144,6 +160,29 @@ export default function NewNoteModal() {
         ...prev,
         submit: error instanceof Error ? error.message : "No se pudo crear el pedido",
       }));
+    }
+  };
+
+  const onChangeExpiresAt = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === "android") {
+      setShowExpiresAtPicker(false);
+    }
+
+    if (event.type === "set" && selectedDate) {
+      setExpiresAtDate(selectedDate);
+    }
+  };
+
+  const onWebExpiresAtChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    if (!value) {
+      setExpiresAtDate(undefined);
+      return;
+    }
+
+    const parsed = new Date(`${value}T00:00:00`);
+    if (!Number.isNaN(parsed.getTime())) {
+      setExpiresAtDate(parsed);
     }
   };
 
@@ -278,12 +317,47 @@ export default function NewNoteModal() {
               {errors.content}
             </HelperText>
 
-            <TextInput
-              mode="outlined"
-              label="Fecha de caducidad (DD/MM/YYYY)"
-              value={expiresAtText}
-              onChangeText={setExpiresAtText}
-            />
+            {Platform.OS === "web" ? (
+              <>
+                <Text variant="bodySmall">Fecha de caducidad</Text>
+                <input
+                  type="date"
+                  value={expiresAtDate ? toHtmlDateValue(expiresAtDate) : ""}
+                  onChange={onWebExpiresAtChange}
+                  style={{
+                    borderRadius: 12,
+                    border: `1px solid ${theme.colors.outline}`,
+                    padding: "14px 12px",
+                    fontSize: 16,
+                    backgroundColor: theme.colors.surface,
+                    color: theme.colors.onSurface,
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <Button mode="outlined" icon="calendar" onPress={() => setShowExpiresAtPicker(true)}>
+                  {expiresAtDate
+                    ? `Fecha de caducidad: ${formatShortDate(expiresAtDate)}`
+                    : "Seleccionar fecha de caducidad"}
+                </Button>
+
+                {expiresAtDate && (
+                  <Button mode="text" icon="close" onPress={() => setExpiresAtDate(undefined)}>
+                    Quitar fecha de caducidad
+                  </Button>
+                )}
+
+                {showExpiresAtPicker && (
+                  <DateTimePicker
+                    mode="date"
+                    value={expiresAtDate ?? new Date()}
+                    display={Platform.OS === "ios" ? "inline" : "default"}
+                    onChange={onChangeExpiresAt}
+                  />
+                )}
+              </>
+            )}
           </>
         )}
 

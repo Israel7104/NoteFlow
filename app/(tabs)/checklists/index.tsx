@@ -2,7 +2,6 @@ import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 import { Text, TextInput } from "react-native-paper";
 
 import { ChecklistCard } from "../../../components/items/ChecklistCard";
@@ -41,15 +40,15 @@ export default function ChecklistsScreen() {
         keyExtractor={(item) => item.id}
         {...({ estimatedItemSize: 116 } as any)}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInDown.delay(index * 45)} exiting={FadeOutLeft}>
+        renderItem={({ item }) => (
+          <View>
             <ChecklistCard
               checklist={item}
               onPress={() =>
                 router.push({ pathname: "/(tabs)/checklists/[id]", params: { id: item.id } })
               }
             />
-          </Animated.View>
+          </View>
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>

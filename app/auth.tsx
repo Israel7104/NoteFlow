@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Redirect } from "expo-router";
 import { useMemo, useState } from "react";
+import * as Haptics from "expo-haptics";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { Button, Card, HelperText, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 
@@ -40,6 +41,10 @@ export default function AuthScreen() {
   if (token) {
     return <Redirect href="/notas" />;
   }
+
+  const triggerTapFeedback = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
   const submit = async () => {
     clearError();
@@ -86,7 +91,11 @@ export default function AuthScreen() {
 
             <SegmentedButtons
               value={mode}
+              style={styles.modeSelector}
+              checkedColor={theme.colors.onPrimary}
+              uncheckedColor={theme.colors.primary}
               onValueChange={(value) => {
+                triggerTapFeedback();
                 setMode(value as Mode);
                 setFieldErrors({});
                 clearError();
@@ -95,10 +104,28 @@ export default function AuthScreen() {
                 {
                   value: "login",
                   label: "Entrar",
+                  icon: mode === "login" ? "check-circle" : "login",
+                  style: {
+                    backgroundColor: mode === "login" ? theme.colors.primary : theme.colors.surface,
+                    borderColor: theme.colors.primary,
+                  },
+                  labelStyle: {
+                    color: mode === "login" ? theme.colors.onPrimary : theme.colors.primary,
+                    fontWeight: "700",
+                  },
                 },
                 {
                   value: "register",
                   label: "Registro",
+                  icon: mode === "register" ? "check-circle" : "account-plus",
+                  style: {
+                    backgroundColor: mode === "register" ? theme.colors.primary : theme.colors.surface,
+                    borderColor: theme.colors.primary,
+                  },
+                  labelStyle: {
+                    color: mode === "register" ? theme.colors.onPrimary : theme.colors.primary,
+                    fontWeight: "700",
+                  },
                 },
               ]}
             />
@@ -130,7 +157,15 @@ export default function AuthScreen() {
               {errorMessage}
             </HelperText>
 
-            <Button mode="contained" onPress={submit} loading={authLoading} disabled={authLoading}>
+            <Button
+              mode="contained"
+              onPress={() => {
+                triggerTapFeedback();
+                void submit();
+              }}
+              loading={authLoading}
+              disabled={authLoading}
+            >
               {mode === "login" ? "Entrar" : "Crear cuenta"}
             </Button>
           </Card.Content>
@@ -151,5 +186,8 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     gap: 8,
+  },
+  modeSelector: {
+    marginBottom: 4,
   },
 });

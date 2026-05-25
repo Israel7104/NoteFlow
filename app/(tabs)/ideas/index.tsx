@@ -1,29 +1,28 @@
 import { FlashList } from "@shopify/flash-list";
+import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
-import { Card, Chip, Text, TextInput } from "react-native-paper";
+import { Text, TextInput } from "react-native-paper";
 
+import { IdeaCard } from "../../../components/items/IdeaCard";
 import { useNotesStore } from "../../../store/notesStore";
-import { formatDate } from "../../../components/items/itemUtils";
-import type { Note } from "../../../types";
+import type { IdeaNote } from "../../../types";
 
 export default function IdeasScreen() {
-  const notes = useNotesStore((state) => state.notes);
+  const ideas = useNotesStore((state) => state.ideas);
+  const router = useRouter();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(
     () =>
-      notes.filter((note) => {
-        const isExpiredByStatus = (note.status ?? "hay-pocos") === "pasados";
-        const isExpiredByDate = note.expiresAt ? new Date(note.expiresAt).getTime() < Date.now() : false;
+      ideas.filter((idea) => {
         const matchesQuery =
-          note.title.toLowerCase().includes(query.toLowerCase()) ||
-          note.content.toLowerCase().includes(query.toLowerCase());
+          idea.title.toLowerCase().includes(query.toLowerCase()) ||
+          idea.tags.some((tag) => tag.toLowerCase().includes(query.toLowerCase()));
 
-        return (isExpiredByStatus || isExpiredByDate) && matchesQuery;
+        return matchesQuery;
       }),
-    [notes, query],
+    [ideas, query],
   );
 
   return (
@@ -36,33 +35,23 @@ export default function IdeasScreen() {
         left={<TextInput.Icon icon="magnify" />}
       />
 
-      <FlashList<Note>
+      <FlashList<IdeaNote>
         data={filtered}
         keyExtractor={(item) => item.id}
         {...({ estimatedItemSize: 128 } as any)}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInDown.delay(index * 45)} exiting={FadeOutLeft}>
-            <Card style={styles.alertCard} mode="outlined">
-              <Card.Content>
-                <Text variant="titleMedium">{item.title}</Text>
-                <Text variant="bodySmall" style={styles.alertText}>
-                  {item.content}
-                </Text>
-                <View style={styles.alertRow}>
-                  <Chip compact icon="alert-circle">Pastel pasado</Chip>
-                  <Text variant="labelSmall">
-                    {item.expiresAt ? `Caduca: ${formatDate(item.expiresAt)}` : "Sin fecha de caducidad"}
-                  </Text>
-                </View>
-              </Card.Content>
-            </Card>
-          </Animated.View>
+        renderItem={({ item }) => (
+          <View>
+            <IdeaCard
+              idea={item}
+              onPress={() => router.push({ pathname: "/(tabs)/ideas/[id]", params: { id: item.id } })}
+            />
+          </View>
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text variant="headlineSmall">Sin alertas de pasteles pasados</Text>
-            <Text variant="bodyMedium">Cuando un pastel se marque como pasado aparecera aqui.</Text>
+            <Text variant="headlineSmall">Sin ideas registradas</Text>
+            <Text variant="bodyMedium">Las ideas guardadas apareceran aqui con sus etiquetas.</Text>
           </View>
         }
       />
@@ -81,20 +70,6 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     marginTop: 60,
-    alignItems: "center",
-    gap: 8,
-  },
-  alertCard: {
-    marginBottom: 12,
-  },
-  alertText: {
-    marginTop: 8,
-    opacity: 0.8,
-  },
-  alertRow: {
-    marginTop: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     gap: 8,
   },

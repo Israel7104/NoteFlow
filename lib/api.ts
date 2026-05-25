@@ -160,7 +160,7 @@ export const api = {
 
   getNotes: (token: string) =>
     request<ApiNote[]>(
-      "/api/notes",
+      `/api/notes?t=${Date.now()}`,
       {
         method: "GET",
         token,
@@ -180,7 +180,15 @@ export const api = {
 
   createNote: (
     token: string,
-    payload: { title: string; type: "note" | "checklist" | "idea"; content?: string; color?: string },
+    payload: {
+      title: string;
+      type: "note" | "checklist" | "idea";
+      content?: string;
+      color?: string;
+      expires_at?: string;
+      delivery_date?: string;
+      tags?: string[];
+    },
   ) =>
     request<ApiNote>(
       "/api/notes",

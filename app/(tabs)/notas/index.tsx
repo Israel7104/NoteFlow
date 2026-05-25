@@ -1,9 +1,8 @@
 import { FlashList } from "@shopify/flash-list";
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
-import { Text, TextInput } from "react-native-paper";
+import { Button, Text, TextInput } from "react-native-paper";
 
 import { NoteCard } from "../../../components/items/NoteCard";
 import { useNotesStore } from "../../../store/notesStore";
@@ -11,8 +10,17 @@ import type { Note } from "../../../types";
 
 export default function NotesScreen() {
   const notes = useNotesStore((state) => state.notes);
+  const isLoading = useNotesStore((state) => state.isLoading);
+  const errorMessage = useNotesStore((state) => state.errorMessage);
+  const refreshNotes = useNotesStore((state) => state.refreshNotes);
   const router = useRouter();
   const [query, setQuery] = useState("");
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshNotes();
+    }, [refreshNotes]),
+  );
 
   const filtered = useMemo(
     () =>
@@ -35,18 +43,31 @@ export default function NotesScreen() {
         left={<TextInput.Icon icon="magnify" />}
       />
 
+      {errorMessage && (
+        <View style={styles.errorBox}>
+          <Text variant="bodyMedium">{errorMessage}</Text>
+          <Button mode="text" onPress={() => void refreshNotes()}>
+            Reintentar
+          </Button>
+        </View>
+      )}
+
       <FlashList<Note>
         data={filtered}
         keyExtractor={(item) => item.id}
         {...({ estimatedItemSize: 108 } as any)}
+        refreshing={isLoading}
+        onRefresh={() => {
+          void refreshNotes();
+        }}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInDown.delay(index * 45)} exiting={FadeOutLeft}>
+        renderItem={({ item }) => (
+          <View>
             <NoteCard
               note={item}
               onPress={() => router.push({ pathname: "/(tabs)/notas/[id]", params: { id: item.id } })}
             />
-          </Animated.View>
+          </View>
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -72,5 +93,10 @@ const styles = StyleSheet.create({
     marginTop: 60,
     alignItems: "center",
     gap: 8,
+  },
+  errorBox: {
+    marginTop: 10,
+    marginBottom: 2,
+    paddingHorizontal: 4,
   },
 });

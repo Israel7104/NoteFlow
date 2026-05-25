@@ -34,7 +34,7 @@ export default function IdeaDetailScreen() {
         mode="contained-tonal"
         icon="archive"
         onPress={async () => {
-          archiveIdea(idea.id);
+          await archiveIdea(idea.id);
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.back();
         }}
@@ -51,7 +51,7 @@ export default function IdeaDetailScreen() {
               text: "Eliminar",
               style: "destructive",
               onPress: async () => {
-                deleteIdea(idea.id);
+                await deleteIdea(idea.id);
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 router.back();
               },

@@ -42,13 +42,13 @@ interface NotesStore {
   createRestockNote: (input: CreateRestockInput) => Promise<void>;
   createChecklist: (input: CreateChecklistInput) => Promise<void>;
   addChecklistItem: (checklistId: string, text: string) => Promise<void>;
-  addIdea: (idea: IdeaNote) => void;
+  addIdea: (idea: IdeaNote) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   deleteChecklist: (id: string) => Promise<void>;
-  deleteIdea: (id: string) => void;
+  deleteIdea: (id: string) => Promise<void>;
   archiveNote: (id: string) => Promise<void>;
   archiveChecklist: (id: string) => Promise<void>;
-  archiveIdea: (id: string) => void;
+  archiveIdea: (id: string) => Promise<void>;
   toggleChecklistItem: (checklistId: string, itemId: string) => Promise<boolean>;
 }
 
@@ -271,23 +271,16 @@ export const useNotesStore = create<NotesStore>()(
         set({ isLoading: true, errorMessage: null });
 
         try {
-          const created = await api.createNote(token, {
+          await api.createNote(token, {
             title,
             type: "note",
             content,
             color: statusToColor[status],
+            expires_at: expiresAt?.toISOString(),
           });
 
-          const note: Note = {
-            ...normalizeTextNote(created),
-            expiresAt,
-            status,
-          };
-
-          set((state) => ({
-            notes: sortByDateDesc([...state.notes, note]),
-            isLoading: false,
-          }));
+          const normalized = await fetchAndNormalizeNotes(token);
+          set({ ...normalized, isLoading: false });
         } catch (error) {
           set({ isLoading: false, errorMessage: getErrorMessage(error) });
           throw error;
@@ -306,24 +299,15 @@ export const useNotesStore = create<NotesStore>()(
             title,
             type: "checklist",
             content: deliveryDate ? deliveryDate.toISOString() : "",
+            delivery_date: deliveryDate?.toISOString(),
           });
 
           const createdItems = await Promise.all(
             itemTexts.map((text) => api.createChecklistItem(token, createdChecklist.id, text)),
           );
 
-          const checklist = normalizeChecklist(createdChecklist, createdItems);
-
-          set((state) => ({
-            checklists: sortByDateDesc([
-              ...state.checklists,
-              {
-                ...checklist,
-                deliveryDate,
-              },
-            ]),
-            isLoading: false,
-          }));
+          const normalized = await fetchAndNormalizeNotes(token);
+          set({ ...normalized, isLoading: false });
         } catch (error) {
           set({ isLoading: false, errorMessage: getErrorMessage(error) });
           throw error;
@@ -348,7 +332,34 @@ export const useNotesStore = create<NotesStore>()(
           ),
         }));
       },
-      addIdea: (idea) => set((state) => ({ ideas: sortByDateDesc([...state.ideas, idea]) })),
+      addIdea: async (idea) => {
+        const token = get().token;
+
+        if (!token) {
+          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
+        }
+
+        try {
+          const created = await api.createNote(token, {
+            title: idea.title,
+            type: "idea",
+            color: idea.color,
+          });
+
+          set((state) => ({
+            ideas: sortByDateDesc([
+              ...state.ideas,
+              {
+                ...normalizeIdea(created),
+                tags: idea.tags,
+              },
+            ]),
+          }));
+        } catch (error) {
+          set({ errorMessage: getErrorMessage(error) });
+          throw error;
+        }
+      },
       deleteNote: async (id) => {
         const token = get().token;
 
@@ -379,7 +390,21 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
-      deleteIdea: (id) => set((state) => ({ ideas: state.ideas.filter((i) => i.id !== id) })),
+      deleteIdea: async (id) => {
+        const token = get().token;
+
+        if (!token) {
+          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
+        }
+
+        try {
+          await api.deleteNote(token, id);
+          set((state) => ({ ideas: state.ideas.filter((i) => i.id !== id) }));
+        } catch (error) {
+          set({ errorMessage: getErrorMessage(error) });
+          throw error;
+        }
+      },
       archiveNote: async (id) => {
         const found = get().notes.find((n) => n.id === id);
         if (!found) return;
@@ -416,23 +441,24 @@ export const useNotesStore = create<NotesStore>()(
           ],
         }));
       },
-      archiveIdea: (id) =>
-        set((state) => {
-          const found = state.ideas.find((i) => i.id === id);
-          if (!found) return state;
-          return {
-            ideas: state.ideas.filter((i) => i.id !== id),
-            archived: [
-              {
-                id: `arch-idea-${id}`,
-                type: "idea",
-                data: found,
-                archivedAt: new Date(),
-              },
-              ...state.archived,
-            ],
-          };
-        }),
+      archiveIdea: async (id) => {
+        const found = get().ideas.find((i) => i.id === id);
+        if (!found) return;
+
+        await get().deleteIdea(id);
+
+        set((state) => ({
+          archived: [
+            {
+              id: `arch-idea-${id}`,
+              type: "idea",
+              data: found,
+              archivedAt: new Date(),
+            },
+            ...state.archived,
+          ],
+        }));
+      },
       toggleChecklistItem: async (checklistId, itemId) => {
         const token = get().token;
         if (!token) {
