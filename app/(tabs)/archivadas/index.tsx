@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { FlashList } from "@shopify/flash-list";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";

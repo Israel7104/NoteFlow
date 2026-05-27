@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";

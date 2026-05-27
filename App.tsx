@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 

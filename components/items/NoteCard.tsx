@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { memo } from "react";
 import { StyleSheet } from "react-native";
 import { Card, Text } from "react-native-paper";

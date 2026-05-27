@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 

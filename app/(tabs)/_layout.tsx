@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { FontAwesome6, MaterialIcons } from "@expo/vector-icons";
 import { Link, Redirect, Tabs } from "expo-router";
 import { useEffect } from "react";

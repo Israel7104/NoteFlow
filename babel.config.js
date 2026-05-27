@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 module.exports = function (api) {
   api.cache(true);
   return {

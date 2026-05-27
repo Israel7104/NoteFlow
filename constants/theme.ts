@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import type { MD3Theme } from "react-native-paper";
 
 const palette = {

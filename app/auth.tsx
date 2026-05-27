@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { z } from "zod";
 import { Redirect } from "expo-router";
 import { useMemo, useState } from "react";
