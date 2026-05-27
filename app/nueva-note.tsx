@@ -78,7 +78,8 @@ export default function NewNoteModal() {
   const [content, setContent] = useState("");
   const [expiresAtDate, setExpiresAtDate] = useState<Date | undefined>(undefined);
   const [showExpiresAtPicker, setShowExpiresAtPicker] = useState(false);
-  const [deliveryDateText, setDeliveryDateText] = useState("");
+  const [orderAtDate, setOrderAtDate] = useState<Date | undefined>(undefined);
+  const [showOrderAtPicker, setShowOrderAtPicker] = useState(false);
   const [itemText, setItemText] = useState("");
   const [items, setItems] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -89,7 +90,8 @@ export default function NewNoteModal() {
     setContent("");
     setExpiresAtDate(undefined);
     setShowExpiresAtPicker(false);
-    setDeliveryDateText("");
+    setOrderAtDate(undefined);
+    setShowOrderAtPicker(false);
     setItemText("");
     setItems([]);
     setErrors({});
@@ -134,7 +136,7 @@ export default function NewNoteModal() {
     const result = orderSchema.safeParse({
       title,
       items,
-      deliveryDate: deliveryDateText,
+      deliveryDate: orderAtDate ? formatShortDate(orderAtDate) : "",
     });
 
     if (!result.success) {
@@ -150,7 +152,7 @@ export default function NewNoteModal() {
       await createChecklist({
         title,
         itemTexts: items,
-        deliveryDate: parseDate(deliveryDateText),
+        deliveryDate: orderAtDate,
       });
 
       reset();
@@ -183,6 +185,29 @@ export default function NewNoteModal() {
     const parsed = new Date(`${value}T00:00:00`);
     if (!Number.isNaN(parsed.getTime())) {
       setExpiresAtDate(parsed);
+    }
+  };
+
+  const onChangeOrderAt = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === "android") {
+      setShowOrderAtPicker(false);
+    }
+
+    if (event.type === "set" && selectedDate) {
+      setOrderAtDate(selectedDate);
+    }
+  };
+
+  const onWebOrderAtChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    if (!value) {
+      setOrderAtDate(undefined);
+      return;
+    }
+
+    const parsed = new Date(`${value}T00:00:00`);
+    if (!Number.isNaN(parsed.getTime())) {
+      setOrderAtDate(parsed);
     }
   };
 
@@ -363,12 +388,47 @@ export default function NewNoteModal() {
 
         {type === "order" && (
           <>
-            <TextInput
-              mode="outlined"
-              label="Fecha de envio (DD/MM/YYYY)"
-              value={deliveryDateText}
-              onChangeText={setDeliveryDateText}
-            />
+            {Platform.OS === "web" ? (
+              <>
+                <Text variant="bodySmall">Fecha de envio</Text>
+                <input
+                  type="date"
+                  value={orderAtDate ? toHtmlDateValue(orderAtDate) : ""}
+                  onChange={onWebOrderAtChange}
+                  style={{
+                    borderRadius: 12,
+                    border: `1px solid ${theme.colors.outline}`,
+                    padding: "14px 12px",
+                    fontSize: 16,
+                    backgroundColor: theme.colors.surface,
+                    color: theme.colors.onSurface,
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <Button mode="outlined" icon="calendar" onPress={() => setShowOrderAtPicker(true)}>
+                  {orderAtDate
+                    ? `Fecha de envio: ${formatShortDate(orderAtDate)}`
+                    : "Seleccionar fecha de envio"}
+                </Button>
+
+                {orderAtDate && (
+                  <Button mode="text" icon="close" onPress={() => setOrderAtDate(undefined)}>
+                    Quitar fecha de envio
+                  </Button>
+                )}
+
+                {showOrderAtPicker && (
+                  <DateTimePicker
+                    mode="date"
+                    value={orderAtDate ?? new Date()}
+                    display={Platform.OS === "ios" ? "inline" : "default"}
+                    onChange={onChangeOrderAt}
+                  />
+                )}
+              </>
+            )}
 
             <View style={styles.row}>
               <TextInput
