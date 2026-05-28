@@ -3,7 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { api, type ApiChecklistItem, type ApiNote, type AuthUser } from "../lib/api";
+import { api, type ApiChecklistItem, type ApiNote } from "../lib/api";
+import { firebaseAuthService, type AuthUser } from "../lib/firebaseAuth";
 import { tokenStorage } from "../lib/tokenStorage";
 import type { ArchivedItem, ChecklistNote, IdeaNote, Note } from "../types";
 
@@ -35,6 +36,7 @@ interface NotesStore {
   errorMessage: string | null;
   setHasHydrated: (state: boolean) => void;
   clearError: () => void;
+  resolveAuthToken: () => Promise<string>;
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
@@ -171,22 +173,44 @@ export const useNotesStore = create<NotesStore>()(
       errorMessage: null,
       setHasHydrated: (state) => set({ hasHydrated: state }),
       clearError: () => set({ errorMessage: null }),
+      resolveAuthToken: async () => {
+        const session = await firebaseAuthService.getSession();
+
+        if (!session?.token) {
+          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
+        }
+
+        const currentToken = get().token;
+        if (currentToken !== session.token || get().user?.id !== session.user.id) {
+          set({ token: session.token, user: session.user });
+        }
+
+        await tokenStorage.setToken(session.token);
+        return session.token;
+      },
       initialize: async () => {
         if (get().hasHydrated) return;
 
         set({ isLoading: true, errorMessage: null });
 
         try {
-          const token = await tokenStorage.getToken();
+          const session = await firebaseAuthService.getSession();
 
-          if (!token) {
+          if (!session?.token) {
+            await tokenStorage.clearToken();
             set({ token: null, user: null, hasHydrated: true, isLoading: false });
             return;
           }
 
-          set({ token });
-          const normalized = await fetchAndNormalizeNotes(token);
-          set({ ...normalized, hasHydrated: true, isLoading: false });
+          await tokenStorage.setToken(session.token);
+          const normalized = await fetchAndNormalizeNotes(session.token);
+          set({
+            token: session.token,
+            user: session.user,
+            ...normalized,
+            hasHydrated: true,
+            isLoading: false,
+          });
         } catch (error) {
           await tokenStorage.clearToken();
           set({
@@ -205,12 +229,12 @@ export const useNotesStore = create<NotesStore>()(
         set({ authLoading: true, errorMessage: null });
 
         try {
-          const response = await api.login(email, password);
-          await tokenStorage.setToken(response.token);
-          const normalized = await fetchAndNormalizeNotes(response.token);
+          const session = await firebaseAuthService.login(email, password);
+          await tokenStorage.setToken(session.token);
+          const normalized = await fetchAndNormalizeNotes(session.token);
           set({
-            token: response.token,
-            user: response.user,
+            token: session.token,
+            user: session.user,
             authLoading: false,
             ...normalized,
           });
@@ -223,12 +247,12 @@ export const useNotesStore = create<NotesStore>()(
         set({ authLoading: true, errorMessage: null });
 
         try {
-          const response = await api.register(email, password);
-          await tokenStorage.setToken(response.token);
-          const normalized = await fetchAndNormalizeNotes(response.token);
+          const session = await firebaseAuthService.register(email, password);
+          await tokenStorage.setToken(session.token);
+          const normalized = await fetchAndNormalizeNotes(session.token);
           set({
-            token: response.token,
-            user: response.user,
+            token: session.token,
+            user: session.user,
             authLoading: false,
             ...normalized,
           });
@@ -238,6 +262,7 @@ export const useNotesStore = create<NotesStore>()(
         }
       },
       logout: async () => {
+        await firebaseAuthService.logout();
         await tokenStorage.clearToken();
         set({
           token: null,
@@ -250,8 +275,7 @@ export const useNotesStore = create<NotesStore>()(
         });
       },
       refreshNotes: async () => {
-        const token = get().token;
-        if (!token) return;
+        const token = await get().resolveAuthToken();
 
         set({ isLoading: true, errorMessage: null });
 
@@ -264,10 +288,7 @@ export const useNotesStore = create<NotesStore>()(
         }
       },
       createRestockNote: async ({ title, content, status, expiresAt }) => {
-        const token = get().token;
-        if (!token) {
-          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
-        }
+        const token = await get().resolveAuthToken();
 
         set({ isLoading: true, errorMessage: null });
 
@@ -288,10 +309,7 @@ export const useNotesStore = create<NotesStore>()(
         }
       },
       createChecklist: async ({ title, itemTexts, deliveryDate }) => {
-        const token = get().token;
-        if (!token) {
-          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
-        }
+        const token = await get().resolveAuthToken();
 
         set({ isLoading: true, errorMessage: null });
 
@@ -315,10 +333,7 @@ export const useNotesStore = create<NotesStore>()(
         }
       },
       addChecklistItem: async (checklistId, text) => {
-        const token = get().token;
-        if (!token) {
-          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
-        }
+        const token = await get().resolveAuthToken();
 
         const created = await api.createChecklistItem(token, checklistId, text);
         set((state) => ({
@@ -334,11 +349,7 @@ export const useNotesStore = create<NotesStore>()(
         }));
       },
       addIdea: async (idea) => {
-        const token = get().token;
-
-        if (!token) {
-          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
-        }
+        const token = await get().resolveAuthToken();
 
         try {
           const created = await api.createNote(token, {
@@ -362,11 +373,7 @@ export const useNotesStore = create<NotesStore>()(
         }
       },
       deleteNote: async (id) => {
-        const token = get().token;
-
-        if (!token) {
-          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
-        }
+        const token = await get().resolveAuthToken();
 
         try {
           await api.deleteNote(token, id);
@@ -377,11 +384,7 @@ export const useNotesStore = create<NotesStore>()(
         }
       },
       deleteChecklist: async (id) => {
-        const token = get().token;
-
-        if (!token) {
-          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
-        }
+        const token = await get().resolveAuthToken();
 
         try {
           await api.deleteNote(token, id);
@@ -392,11 +395,7 @@ export const useNotesStore = create<NotesStore>()(
         }
       },
       deleteIdea: async (id) => {
-        const token = get().token;
-
-        if (!token) {
-          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
-        }
+        const token = await get().resolveAuthToken();
 
         try {
           await api.deleteNote(token, id);
@@ -461,10 +460,7 @@ export const useNotesStore = create<NotesStore>()(
         }));
       },
       toggleChecklistItem: async (checklistId, itemId) => {
-        const token = get().token;
-        if (!token) {
-          throw new Error("Tu sesion expiro. Inicia sesion de nuevo.");
-        }
+        const token = await get().resolveAuthToken();
 
         const targetChecklist = get().checklists.find((checklist) => checklist.id === checklistId);
         const targetItem = targetChecklist?.items.find((item) => item.id === itemId);

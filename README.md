@@ -74,6 +74,12 @@ npm install
 
 ```bash
 EXPO_PUBLIC_API_URL=http://localhost:3000
+EXPO_PUBLIC_FIREBASE_API_KEY=tu_api_key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=tu-proyecto
+EXPO_PUBLIC_FIREBASE_APP_ID=tu_app_id
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=tu-proyecto.firebasestorage.app
 ```
 
 3. Iniciar proyecto:
@@ -124,7 +130,7 @@ npx eas build -p ios --profile production
 npx expo start -c
 ```
 
-- La API se consume con `Authorization: Bearer <token>`.
+- La API se consume con `Authorization: Bearer <token>` (ID token de Firebase).
 
 ## Roadmap
 
