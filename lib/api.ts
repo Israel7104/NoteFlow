@@ -79,6 +79,17 @@ const withTimeout = async <T>(promise: Promise<T>, ms: number): Promise<T> => {
   }
 };
 
+const getDeploymentProtectionMessage = (response: Response, contentType?: string) => {
+  const isHtml = contentType?.includes("text/html");
+  const hasVercelHeaders = Boolean(response.headers.get("x-vercel-id") || response.headers.get("x-frame-options"));
+
+  if ((response.status === 401 || response.status === 403) && isHtml && hasVercelHeaders) {
+    return "La API parece protegida por Vercel Deployment Protection. Desactiva la proteccion para este deployment o usa un dominio/API publica para EXPO_PUBLIC_API_URL.";
+  }
+
+  return undefined;
+};
+
 const request = async <T>(
   path: string,
   options: RequestInit & { token?: string },
@@ -105,7 +116,7 @@ const request = async <T>(
 
     if (/fetch|network|failed|Load failed|NetworkError/i.test(message)) {
       throw new ApiError(
-        "No se pudo conectar con la API. Si estas en web, revisa CORS en el backend de Vercel.",
+        "No se pudo conectar con la API. Si estas en web, revisa CORS y confirma que el backend no este protegido por Vercel Deployment Protection.",
         0,
         error,
       );
@@ -118,10 +129,16 @@ const request = async <T>(
     return undefined as T;
   }
 
-  const isJson = response.headers.get("content-type")?.includes("application/json");
+  const contentType = response.headers.get("content-type") ?? undefined;
+  const isJson = contentType?.includes("application/json");
   const payload = isJson ? await response.json() : undefined;
 
   if (!response.ok) {
+    const deploymentProtectionMessage = getDeploymentProtectionMessage(response, contentType);
+    if (deploymentProtectionMessage) {
+      throw new ApiError(deploymentProtectionMessage, response.status);
+    }
+
     const fallbackMessage = response.status >= 500 ? "Error interno del servidor" : "Solicitud invalida";
     const message =
       payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"

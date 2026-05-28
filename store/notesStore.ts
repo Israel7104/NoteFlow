@@ -73,6 +73,16 @@ const colorToStatus = Object.entries(statusToColor).reduce(
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Ocurrio un error inesperado";
 
+const getAuthFlowErrorMessage = (error: unknown) => {
+  const message = getErrorMessage(error);
+
+  if (/token invalido|invalid token/i.test(message)) {
+    return "El backend rechazo el token de Firebase. Debes habilitar validacion de ID token de Firebase en la API.";
+  }
+
+  return message;
+};
+
 const parseDate = (value: string | null | undefined) => {
   if (!value) return undefined;
   const parsed = new Date(value);
@@ -239,7 +249,7 @@ export const useNotesStore = create<NotesStore>()(
             ...normalized,
           });
         } catch (error) {
-          set({ authLoading: false, errorMessage: getErrorMessage(error) });
+          set({ authLoading: false, errorMessage: getAuthFlowErrorMessage(error) });
           throw error;
         }
       },
@@ -257,7 +267,7 @@ export const useNotesStore = create<NotesStore>()(
             ...normalized,
           });
         } catch (error) {
-          set({ authLoading: false, errorMessage: getErrorMessage(error) });
+          set({ authLoading: false, errorMessage: getAuthFlowErrorMessage(error) });
           throw error;
         }
       },
