@@ -1,7 +1,7 @@
 // Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { memo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Card, Chip, Text } from "react-native-paper";
+import { Avatar, Card, Chip, Text } from "react-native-paper";
 
 import type { IdeaNote } from "../../types";
 import { formatDate } from "./itemUtils";
@@ -14,8 +14,17 @@ interface IdeaCardProps {
 const IdeaCardComponent = ({ idea, onPress }: IdeaCardProps) => (
   <Card style={[styles.card, { backgroundColor: idea.color }]} onPress={onPress} mode="elevated">
     <Card.Content>
+      <View style={styles.headerRow}>
+        <Avatar.Text size={36} label="AWS" />
+        <View style={styles.titleBlock}>
+          <Text variant="titleMedium" numberOfLines={1}>
+            {idea.title}
+          </Text>
+          <Text variant="bodySmall">{idea.daysRemaining} dias restantes</Text>
+        </View>
+      </View>
       <Text variant="titleMedium" numberOfLines={1}>
-        {idea.title}
+        {idea.sourceType === "restock" ? "Reposicion" : "Pedido"}
       </Text>
       <View style={styles.chipsRow}>
         {idea.tags.slice(0, 3).map((tag) => (
@@ -41,6 +50,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     flexDirection: "row",
     flexWrap: "wrap",
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  titleBlock: {
+    flex: 1,
   },
   chip: {
     marginRight: 8,

@@ -6,12 +6,24 @@ export interface BaseNote {
   updatedAt: Date;
 }
 
+export type ProductCategory =
+  | "cupcakes"
+  | "pastel-entero-pequeno"
+  | "pastel-entero-grande"
+  | "dulces"
+  | "galletas"
+  | "otros";
+
 export type RestockStatus = "faltan" | "hay-pocos" | "hay-muchos" | "pasados";
 
 export interface Note extends BaseNote {
   content: string;
   status: RestockStatus;
   expiresAt?: Date;
+  price: number;
+  shelfLifeDays: number;
+  category: ProductCategory;
+  imagePlaceholder: string;
 }
 
 export interface ChecklistItem {
@@ -23,11 +35,18 @@ export interface ChecklistItem {
 export interface ChecklistNote extends BaseNote {
   items: ChecklistItem[];
   deliveryDate?: Date;
+  description: string;
+  routeUrl: string;
+  imagePlaceholder: string;
 }
 
 export interface IdeaNote extends BaseNote {
   tags: string[];
   color: string;
+  imagePlaceholder: string;
+  sourceType: "restock" | "order";
+  daysRemaining: number;
+  dueDate?: Date;
 }
 
 export type AnyNote = Note | ChecklistNote | IdeaNote;

@@ -6,22 +6,54 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { api, type ApiChecklistItem, type ApiNote } from "../lib/api";
 import { firebaseAuthService, type AuthUser } from "../lib/firebaseAuth";
 import { tokenStorage } from "../lib/tokenStorage";
-import type { ArchivedItem, ChecklistNote, IdeaNote, Note } from "../types";
+import type { ArchivedItem, ChecklistNote, IdeaNote, Note, ProductCategory } from "../types";
 
 type RestockStatus = Note["status"];
 
 type CreateRestockInput = {
   title: string;
   content: string;
+  price: number;
+  shelfLifeDays: number;
+  category: ProductCategory;
+  imagePlaceholder: string;
   status: RestockStatus;
-  expiresAt?: Date;
+  expiresAt: Date;
 };
 
 type CreateChecklistInput = {
   title: string;
-  itemTexts: string[];
+  description: string;
+  routeUrl: string;
+  imagePlaceholder: string;
   deliveryDate?: Date;
 };
+
+type RestockMeta = {
+  description: string;
+  price: number;
+  shelfLifeDays: number;
+  category: ProductCategory;
+  imagePlaceholder: string;
+};
+
+type OrderMeta = {
+  description: string;
+  routeUrl: string;
+  imagePlaceholder: string;
+};
+
+type AlertMeta = {
+  sourceType: "restock" | "order";
+  sourceName: string;
+  daysRemaining: number;
+  imagePlaceholder: string;
+  dueDate?: string;
+};
+
+const RESTOCK_META_PREFIX = "NF_RESTOCK_META::";
+const ORDER_META_PREFIX = "NF_ORDER_META::";
+const ALERT_META_PREFIX = "NF_ALERT_META::";
 
 interface NotesStore {
   notes: Note[];
@@ -40,6 +72,10 @@ interface NotesStore {
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  loginWithGooglePopup: () => Promise<void>;
+  loginWithGoogleIdToken: (idToken: string) => Promise<void>;
+  updateProfileName: (displayName: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshNotes: () => Promise<void>;
   createRestockNote: (input: CreateRestockInput) => Promise<void>;
@@ -89,6 +125,79 @@ const parseDate = (value: string | null | undefined) => {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 };
 
+const daysUntil = (date?: Date) => {
+  if (!date) return 0;
+  const now = new Date();
+  const ms = date.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+};
+
+const encodeRestockMeta = (meta: RestockMeta) => `${RESTOCK_META_PREFIX}${JSON.stringify(meta)}`;
+
+const parseRestockMeta = (value: string | null | undefined): RestockMeta | null => {
+  if (!value || !value.startsWith(RESTOCK_META_PREFIX)) return null;
+
+  try {
+    const raw = JSON.parse(value.slice(RESTOCK_META_PREFIX.length)) as Partial<RestockMeta>;
+    if (
+      typeof raw.description === "string" &&
+      typeof raw.price === "number" &&
+      typeof raw.shelfLifeDays === "number" &&
+      typeof raw.category === "string" &&
+      typeof raw.imagePlaceholder === "string"
+    ) {
+      return raw as RestockMeta;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
+const encodeOrderMeta = (meta: OrderMeta) => `${ORDER_META_PREFIX}${JSON.stringify(meta)}`;
+
+const parseOrderMeta = (value: string | null | undefined): OrderMeta | null => {
+  if (!value || !value.startsWith(ORDER_META_PREFIX)) return null;
+
+  try {
+    const raw = JSON.parse(value.slice(ORDER_META_PREFIX.length)) as Partial<OrderMeta>;
+    if (
+      typeof raw.description === "string" &&
+      typeof raw.routeUrl === "string" &&
+      typeof raw.imagePlaceholder === "string"
+    ) {
+      return raw as OrderMeta;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
+const encodeAlertMeta = (meta: AlertMeta) => `${ALERT_META_PREFIX}${JSON.stringify(meta)}`;
+
+const parseAlertMeta = (value: string | null | undefined): AlertMeta | null => {
+  if (!value || !value.startsWith(ALERT_META_PREFIX)) return null;
+
+  try {
+    const raw = JSON.parse(value.slice(ALERT_META_PREFIX.length)) as Partial<AlertMeta>;
+    if (
+      (raw.sourceType === "restock" || raw.sourceType === "order") &&
+      typeof raw.sourceName === "string" &&
+      typeof raw.daysRemaining === "number" &&
+      typeof raw.imagePlaceholder === "string"
+    ) {
+      return raw as AlertMeta;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
 const normalizeChecklistItem = (item: ApiChecklistItem) => ({
   id: item.id,
   text: item.text,
@@ -113,33 +222,57 @@ const deriveStatus = (note: ApiNote): RestockStatus => {
   return "hay-pocos";
 };
 
-const normalizeChecklist = (note: ApiNote, items: ApiChecklistItem[]): ChecklistNote => ({
-  id: note.id,
-  title: note.title,
-  items: items.map(normalizeChecklistItem),
-  deliveryDate: parseDate(note.delivery_date),
-  createdAt: new Date(note.created_at),
-  updatedAt: new Date(note.updated_at),
-});
+const normalizeChecklist = (note: ApiNote, items: ApiChecklistItem[]): ChecklistNote => {
+  const orderMeta = parseOrderMeta(note.content);
 
-const normalizeTextNote = (note: ApiNote): Note => ({
-  id: note.id,
-  title: note.title,
-  content: note.content ?? "",
-  status: deriveStatus(note),
-  expiresAt: parseDate(note.expires_at),
-  createdAt: new Date(note.created_at),
-  updatedAt: new Date(note.updated_at),
-});
+  return {
+    id: note.id,
+    title: note.title,
+    items: items.map(normalizeChecklistItem),
+    description: orderMeta?.description ?? "",
+    routeUrl: orderMeta?.routeUrl ?? "",
+    imagePlaceholder: orderMeta?.imagePlaceholder ?? "AWS",
+    deliveryDate: parseDate(note.delivery_date),
+    createdAt: new Date(note.created_at),
+    updatedAt: new Date(note.updated_at),
+  };
+};
 
-const normalizeIdea = (note: ApiNote): IdeaNote => ({
-  id: note.id,
-  title: note.title,
-  color: note.color ?? "#DDDDDD",
-  tags: note.tags ?? [],
-  createdAt: new Date(note.created_at),
-  updatedAt: new Date(note.updated_at),
-});
+const normalizeTextNote = (note: ApiNote): Note => {
+  const restockMeta = parseRestockMeta(note.content);
+
+  return {
+    id: note.id,
+    title: note.title,
+    content: restockMeta?.description ?? (note.content ?? ""),
+    status: deriveStatus(note),
+    price: restockMeta?.price ?? 0,
+    shelfLifeDays: restockMeta?.shelfLifeDays ?? 0,
+    category: restockMeta?.category ?? "otros",
+    imagePlaceholder: restockMeta?.imagePlaceholder ?? "AWS",
+    expiresAt: parseDate(note.expires_at),
+    createdAt: new Date(note.created_at),
+    updatedAt: new Date(note.updated_at),
+  };
+};
+
+const normalizeIdea = (note: ApiNote): IdeaNote => {
+  const alertMeta = parseAlertMeta(note.content);
+  const dueDate = parseDate(alertMeta?.dueDate);
+
+  return {
+    id: note.id,
+    title: note.title,
+    color: note.color ?? "#DDDDDD",
+    tags: note.tags ?? [],
+    imagePlaceholder: alertMeta?.imagePlaceholder ?? "AWS",
+    sourceType: alertMeta?.sourceType ?? "restock",
+    daysRemaining: alertMeta?.daysRemaining ?? daysUntil(dueDate),
+    dueDate,
+    createdAt: new Date(note.created_at),
+    updatedAt: new Date(note.updated_at),
+  };
+};
 
 const fetchAndNormalizeNotes = async (token: string) => {
   const apiNotes = await api.getNotes(token);
@@ -166,6 +299,39 @@ const fetchAndNormalizeNotes = async (token: string) => {
     ),
     ideas: sortByDateDesc(apiNotes.filter((note) => note.type === "idea").map(normalizeIdea)),
   };
+};
+
+const createAlertIdea = async (
+  token: string,
+  params: {
+    sourceType: "restock" | "order";
+    sourceName: string;
+    dueDate?: Date;
+    imagePlaceholder: string;
+  },
+) => {
+  const daysRemaining = daysUntil(params.dueDate);
+
+  await api.createNote(token, {
+    title:
+      params.sourceType === "restock"
+        ? `Reposicion: ${params.sourceName}`
+        : `Pedido: ${params.sourceName}`,
+    type: "idea",
+    color: params.sourceType === "restock" ? "#F6EFCF" : "#D9EEF8",
+    content: encodeAlertMeta({
+      sourceType: params.sourceType,
+      sourceName: params.sourceName,
+      daysRemaining,
+      imagePlaceholder: params.imagePlaceholder,
+      dueDate: params.dueDate?.toISOString(),
+    }),
+    tags: [
+      params.sourceType === "restock" ? "reposicion" : "pedido",
+      `${daysRemaining} dias restantes`,
+      "foto: placeholder",
+    ],
+  });
 };
 
 export const useNotesStore = create<NotesStore>()(
@@ -271,6 +437,64 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      loginWithGooglePopup: async () => {
+        set({ authLoading: true, errorMessage: null });
+
+        try {
+          const session = await firebaseAuthService.loginWithGooglePopup();
+          await tokenStorage.setToken(session.token);
+          const normalized = await fetchAndNormalizeNotes(session.token);
+          set({
+            token: session.token,
+            user: session.user,
+            authLoading: false,
+            ...normalized,
+          });
+        } catch (error) {
+          set({ authLoading: false, errorMessage: getAuthFlowErrorMessage(error) });
+          throw error;
+        }
+      },
+      loginWithGoogleIdToken: async (idToken) => {
+        set({ authLoading: true, errorMessage: null });
+
+        try {
+          const session = await firebaseAuthService.loginWithGoogleIdToken(idToken);
+          await tokenStorage.setToken(session.token);
+          const normalized = await fetchAndNormalizeNotes(session.token);
+          set({
+            token: session.token,
+            user: session.user,
+            authLoading: false,
+            ...normalized,
+          });
+        } catch (error) {
+          set({ authLoading: false, errorMessage: getAuthFlowErrorMessage(error) });
+          throw error;
+        }
+      },
+      updateProfileName: async (displayName) => {
+        set({ authLoading: true, errorMessage: null });
+
+        try {
+          const updatedUser = await firebaseAuthService.updateDisplayName(displayName);
+          set({ user: updatedUser, authLoading: false });
+        } catch (error) {
+          set({ authLoading: false, errorMessage: getErrorMessage(error) });
+          throw error;
+        }
+      },
+      changePassword: async (currentPassword, newPassword) => {
+        set({ authLoading: true, errorMessage: null });
+
+        try {
+          await firebaseAuthService.changePassword(currentPassword, newPassword);
+          set({ authLoading: false });
+        } catch (error) {
+          set({ authLoading: false, errorMessage: getErrorMessage(error) });
+          throw error;
+        }
+      },
       logout: async () => {
         await firebaseAuthService.logout();
         await tokenStorage.clearToken();
@@ -297,7 +521,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
-      createRestockNote: async ({ title, content, status, expiresAt }) => {
+      createRestockNote: async ({ title, content, price, shelfLifeDays, category, imagePlaceholder, status, expiresAt }) => {
         const token = await get().resolveAuthToken();
 
         set({ isLoading: true, errorMessage: null });
@@ -306,9 +530,22 @@ export const useNotesStore = create<NotesStore>()(
           await api.createNote(token, {
             title,
             type: "note",
-            content,
+            content: encodeRestockMeta({
+              description: content,
+              price,
+              shelfLifeDays,
+              category,
+              imagePlaceholder,
+            }),
             color: statusToColor[status],
-            expires_at: expiresAt?.toISOString(),
+            expires_at: expiresAt.toISOString(),
+          });
+
+          await createAlertIdea(token, {
+            sourceType: "restock",
+            sourceName: title,
+            dueDate: expiresAt,
+            imagePlaceholder,
           });
 
           const normalized = await fetchAndNormalizeNotes(token);
@@ -318,22 +555,29 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
-      createChecklist: async ({ title, itemTexts, deliveryDate }) => {
+      createChecklist: async ({ title, description, routeUrl, imagePlaceholder, deliveryDate }) => {
         const token = await get().resolveAuthToken();
 
         set({ isLoading: true, errorMessage: null });
 
         try {
-          const createdChecklist = await api.createNote(token, {
+          await api.createNote(token, {
             title,
             type: "checklist",
-            content: deliveryDate ? deliveryDate.toISOString() : "",
+            content: encodeOrderMeta({
+              description,
+              routeUrl,
+              imagePlaceholder,
+            }),
             delivery_date: deliveryDate?.toISOString(),
           });
 
-          const createdItems = await Promise.all(
-            itemTexts.map((text) => api.createChecklistItem(token, createdChecklist.id, text)),
-          );
+          await createAlertIdea(token, {
+            sourceType: "order",
+            sourceName: title,
+            dueDate: deliveryDate,
+            imagePlaceholder,
+          });
 
           const normalized = await fetchAndNormalizeNotes(token);
           set({ ...normalized, isLoading: false });

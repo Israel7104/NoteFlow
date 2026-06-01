@@ -1,8 +1,11 @@
 // Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { z } from "zod";
 import { Redirect } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as Haptics from "expo-haptics";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import { ResponseType } from "expo-auth-session";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { Button, Card, HelperText, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 
@@ -15,6 +18,10 @@ const authSchema = z.object({
 
 type Mode = "login" | "register";
 
+WebBrowser.maybeCompleteAuthSession();
+
+const isGoogleOAuthClientId = (value?: string) => Boolean(value && value.trim().endsWith(".apps.googleusercontent.com"));
+
 export default function AuthScreen() {
   const hasHydrated = useStoreHydrated();
   const token = useNotesStore((state) => state.token);
@@ -23,12 +30,71 @@ export default function AuthScreen() {
   const clearError = useNotesStore((state) => state.clearError);
   const login = useNotesStore((state) => state.login);
   const register = useNotesStore((state) => state.register);
+  const loginWithGooglePopup = useNotesStore((state) => state.loginWithGooglePopup);
+  const loginWithGoogleIdToken = useNotesStore((state) => state.loginWithGoogleIdToken);
   const theme = useTheme();
+
+  const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  const googleAndroidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+  const googleExpoClientId = process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID;
+  const hasAnyValidGoogleClientId =
+    isGoogleOAuthClientId(googleExpoClientId) ||
+    isGoogleOAuthClientId(googleWebClientId) ||
+    isGoogleOAuthClientId(googleIosClientId) ||
+    isGoogleOAuthClientId(googleAndroidClientId);
+  const resolvedGoogleClientId =
+    googleExpoClientId ?? googleWebClientId ?? googleIosClientId ?? googleAndroidClientId ?? "missing-client-id";
+
+  const [googleRequest, googleResponse, promptGoogle] = Google.useAuthRequest({
+    clientId: resolvedGoogleClientId,
+    webClientId: googleWebClientId,
+    iosClientId: googleIosClientId,
+    androidClientId: googleAndroidClientId,
+    responseType: ResponseType.IdToken,
+    scopes: ["openid", "profile", "email"],
+    selectAccount: true,
+  });
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [googleError, setGoogleError] = useState<string>("");
+
+  const isWeb = Platform.OS === "web";
+  const hasNativeGoogleClientId =
+    isGoogleOAuthClientId(googleExpoClientId) ||
+    isGoogleOAuthClientId(googleIosClientId) ||
+    isGoogleOAuthClientId(googleAndroidClientId);
+
+  useEffect(() => {
+    if (!googleResponse) return;
+
+    if (googleResponse.type === "cancel" || googleResponse.type === "dismiss") {
+      setGoogleError("Se cancelo el inicio con Google.");
+      return;
+    }
+
+    if (googleResponse.type === "error") {
+      const message = googleResponse.error?.message ?? "Fallo el inicio con Google.";
+      setGoogleError(message);
+      return;
+    }
+
+    if (googleResponse.type !== "success") return;
+
+    const idToken = googleResponse.authentication?.idToken ?? googleResponse.params?.id_token;
+    if (!idToken) {
+      setGoogleError("Google no devolvio un ID token valido.");
+      return;
+    }
+
+    setGoogleError("");
+    void loginWithGoogleIdToken(idToken).catch(() => {
+      // El mensaje final se muestra desde el store.
+    });
+  }, [googleResponse, loginWithGoogleIdToken]);
 
   const title = useMemo(
     () => (mode === "login" ? "Inicia sesion en NoteFlow" : "Crea tu cuenta NoteFlow"),
@@ -78,12 +144,40 @@ export default function AuthScreen() {
     }
   };
 
+  const submitGoogle = async () => {
+    clearError();
+    setGoogleError("");
+
+    try {
+      if (isWeb) {
+        await loginWithGooglePopup();
+        return;
+      }
+
+      if (!hasNativeGoogleClientId) {
+        setGoogleError(
+          "Configura OAuth Client ID valido (.apps.googleusercontent.com) en EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID o EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID / EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID.",
+        );
+        return;
+      }
+
+      if (!hasAnyValidGoogleClientId) {
+        setGoogleError("Tus valores EXPO_PUBLIC_GOOGLE_* parecen App IDs de Firebase (1:...). Deben ser OAuth Client IDs de Google.");
+        return;
+      }
+
+      await promptGoogle();
+    } catch {
+      setGoogleError("No se pudo abrir el flujo de Google en este entorno.");
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={[styles.flex, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, isWeb && styles.webContainer]}>
         <Card mode="contained" style={{ backgroundColor: theme.colors.surfaceVariant }}>
           <Card.Content style={styles.formContainer}>
             <Text variant="headlineSmall" style={{ color: theme.colors.onBackground, fontWeight: "700" }}>
@@ -93,8 +187,6 @@ export default function AuthScreen() {
             <SegmentedButtons
               value={mode}
               style={styles.modeSelector}
-              checkedColor={theme.colors.onPrimary}
-              uncheckedColor={theme.colors.primary}
               onValueChange={(value) => {
                 triggerTapFeedback();
                 setMode(value as Mode);
@@ -169,6 +261,23 @@ export default function AuthScreen() {
             >
               {mode === "login" ? "Entrar" : "Crear cuenta"}
             </Button>
+
+            <Button
+              mode="outlined"
+              icon="google"
+              onPress={() => {
+                triggerTapFeedback();
+                void submitGoogle();
+              }}
+              loading={authLoading}
+              disabled={authLoading || (!isWeb && (!hasNativeGoogleClientId || !googleRequest))}
+            >
+              Continuar con Google
+            </Button>
+
+            <HelperText type="error" visible={Boolean(googleError)}>
+              {googleError}
+            </HelperText>
           </Card.Content>
         </Card>
       </View>
@@ -184,6 +293,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
+  },
+  webContainer: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
+    paddingHorizontal: 28,
   },
   formContainer: {
     gap: 8,

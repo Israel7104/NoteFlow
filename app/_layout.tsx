@@ -2,7 +2,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo } from "react";
-import { useColorScheme, View } from "react-native";
+import { Platform, StyleSheet, useColorScheme, View } from "react-native";
 import { ActivityIndicator, MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -14,6 +14,7 @@ export default function RootLayout() {
   const isDark = colorScheme === "dark";
   const hasHydrated = useStoreHydrated();
   const initialize = useNotesStore((state) => state.initialize);
+  const isWeb = Platform.OS === "web";
 
   useEffect(() => {
     void initialize();
@@ -45,27 +46,50 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-          <StatusBar style={isDark ? "light" : "dark"} />
-          <Stack>
-            <Stack.Screen
-              name="auth"
-              options={{
-                title: "Acceso",
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="nueva-note"
-              options={{
-                title: "Nuevo registro",
-                presentation: "modal",
-              }}
-            />
-          </Stack>
+        <View style={[styles.root, { backgroundColor: isWeb ? "#FFFFFF" : theme.colors.background }]}>
+          <View
+            style={[
+              styles.stackContainer,
+              isWeb && styles.webStackContainer,
+              isWeb && { borderLeftWidth: 1, borderRightWidth: 1, borderColor: isDark ? "#3A3A3A" : "#D6D6D6" },
+              { backgroundColor: theme.colors.background },
+            ]}
+          >
+            <StatusBar style={isDark ? "light" : "dark"} />
+            <Stack>
+              <Stack.Screen
+                name="auth"
+                options={{
+                  title: "Acceso",
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="nueva-note"
+                options={{
+                  title: "Nuevo registro",
+                  presentation: "modal",
+                }}
+              />
+            </Stack>
+          </View>
         </View>
       </PaperProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  stackContainer: {
+    flex: 1,
+  },
+  webStackContainer: {
+    width: "100%",
+    maxWidth: 1400,
+    alignSelf: "center",
+  },
+});

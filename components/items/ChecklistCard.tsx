@@ -23,13 +23,14 @@ const ChecklistCardComponent = ({ checklist, onPress }: ChecklistCardProps) => {
           {checklist.title}
         </Text>
         <View style={styles.row}>
-          <Text variant="bodySmall">
-            Pedido: {completed}/{total} items listos
-          </Text>
+          <Text variant="bodySmall">Pedido: {checklist.description}</Text>
           <Text variant="labelSmall">
             Entrega: {checklist.deliveryDate ? formatDate(checklist.deliveryDate) : "sin fecha"}
           </Text>
         </View>
+        <Text variant="labelSmall" style={styles.routeText} numberOfLines={1}>
+          Ruta: {checklist.routeUrl || "pendiente"} • Foto: {checklist.imagePlaceholder}
+        </Text>
         <ProgressBar progress={progress} style={styles.progress} />
       </Card.Content>
     </Card>
@@ -52,5 +53,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     height: 10,
     borderRadius: 999,
+  },
+  routeText: {
+    marginTop: 8,
+    opacity: 0.75,
   },
 });

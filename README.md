@@ -80,6 +80,15 @@ EXPO_PUBLIC_FIREBASE_PROJECT_ID=tu-proyecto
 EXPO_PUBLIC_FIREBASE_APP_ID=tu_app_id
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=tu-proyecto.firebasestorage.app
+
+# Google Sign-In (Firebase Auth)
+# Web OAuth client ID
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=tu_web_client_id.apps.googleusercontent.com
+# Opcional para Expo Go / development build
+EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID=tu_expo_client_id.apps.googleusercontent.com
+# Recomendado para builds nativas
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=tu_ios_client_id.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=tu_android_client_id.apps.googleusercontent.com
 ```
 
 3. Iniciar proyecto:
@@ -131,6 +140,8 @@ npx expo start -c
 ```
 
 - La API se consume con `Authorization: Bearer <token>` (ID token de Firebase).
+- Para Google Sign-In, habilita Google en Firebase Authentication > Sign-in method.
+- En movil, usa development build o build nativa para OAuth; Expo Go no es fiable para este flujo.
 
 ## Roadmap
 

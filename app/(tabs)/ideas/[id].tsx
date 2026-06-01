@@ -25,6 +25,14 @@ export default function IdeaDetailScreen() {
   return (
     <View style={[styles.container, { backgroundColor: idea.color }]}>
       <Text variant="headlineMedium">{idea.title}</Text>
+      <Text variant="bodyMedium">Tipo: {idea.sourceType === "restock" ? "Reposicion" : "Pedido"}</Text>
+      <Text variant="bodyMedium">Dias restantes: {idea.daysRemaining}</Text>
+      <Text variant="bodyMedium">Foto: {idea.imagePlaceholder}</Text>
+      <Text variant="bodyMedium">
+        {idea.dueDate
+          ? `Fecha objetivo: ${new Date(idea.dueDate).toLocaleDateString("es-ES")}`
+          : "Fecha objetivo: sin fecha"}
+      </Text>
       <View style={styles.tags}>
         {idea.tags.map((tag) => (
           <Chip key={tag}>{tag}</Chip>

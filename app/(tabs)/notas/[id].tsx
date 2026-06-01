@@ -52,9 +52,21 @@ export default function NoteDetailScreen() {
             Estado: {(note.status ?? "hay-pocos").replace("-", " ")}
           </Text>
           <Text variant="bodyMedium" style={styles.date}>
+            Precio: ${note.price.toFixed(2)}
+          </Text>
+          <Text variant="bodyMedium" style={styles.date}>
+            Etiqueta: {note.category.replace(/-/g, " ")}
+          </Text>
+          <Text variant="bodyMedium" style={styles.date}>
+            Duracion: {note.shelfLifeDays} dias
+          </Text>
+          <Text variant="bodyMedium" style={styles.date}>
             {note.expiresAt
               ? `Caducidad: ${new Date(note.expiresAt).toLocaleDateString("es-ES")}`
               : "Caducidad: sin fecha"}
+          </Text>
+          <Text variant="bodyMedium" style={styles.date}>
+            Foto: {note.imagePlaceholder}
           </Text>
           <Text variant="bodyLarge" style={styles.content}>
             {note.content}

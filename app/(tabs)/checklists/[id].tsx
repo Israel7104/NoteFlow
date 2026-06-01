@@ -45,6 +45,15 @@ export default function ChecklistDetailScreen() {
           ? `Envio: ${new Date(checklist.deliveryDate).toLocaleDateString("es-ES")}`
           : "Envio: sin fecha"}
       </Text>
+      <Text variant="bodyMedium" style={styles.meta}>
+        Descripcion: {checklist.description}
+      </Text>
+      <Text variant="bodyMedium" style={styles.meta}>
+        Ruta Google Maps: {checklist.routeUrl || "sin ruta"}
+      </Text>
+      <Text variant="bodyMedium" style={styles.meta}>
+        Foto: {checklist.imagePlaceholder}
+      </Text>
       {checklist.items.map((item) => (
         <List.Item
           key={item.id}
