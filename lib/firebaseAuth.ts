@@ -146,6 +146,21 @@ export const firebaseAuthService = {
     }
   },
 
+  updatePhotoURL: async (photoURL: string): Promise<AuthUser> => {
+    const currentUser = firebaseAuth.currentUser;
+    if (!currentUser) {
+      throw new Error("No hay sesion activa.");
+    }
+
+    try {
+      await updateProfile(currentUser, { photoURL: photoURL.trim() });
+      await currentUser.reload();
+      return mapUser(currentUser);
+    } catch (error) {
+      throw new Error(mapFirebaseErrorMessage(error));
+    }
+  },
+
   changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
     const currentUser = firebaseAuth.currentUser;
     if (!currentUser || !currentUser.email) {

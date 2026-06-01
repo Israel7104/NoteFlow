@@ -17,6 +17,13 @@ const checklistItemSchema = z.object({
   is_completed: z.boolean(),
 });
 
+const uploadPresignResponseSchema = z.object({
+  signedUrl: z.string().url(),
+  publicUrl: z.string().url(),
+  key: z.string().min(1),
+  expiresIn: z.number().int().positive(),
+});
+
 const apiNoteSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -39,6 +46,7 @@ export type AuthUser = z.infer<typeof authUserSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
 export type ApiNote = z.infer<typeof apiNoteSchema>;
 export type ApiChecklistItem = z.infer<typeof checklistItemSchema>;
+export type UploadPresignResponse = z.infer<typeof uploadPresignResponseSchema>;
 
 export class ApiError extends Error {
   status: number;
@@ -132,6 +140,7 @@ const request = async <T>(
   const contentType = response.headers.get("content-type") ?? undefined;
   const isJson = contentType?.includes("application/json");
   const payload = isJson ? await response.json() : undefined;
+  const nonJsonBody = !isJson ? await response.text().catch(() => "") : "";
 
   if (!response.ok) {
     const deploymentProtectionMessage = getDeploymentProtectionMessage(response, contentType);
@@ -139,13 +148,24 @@ const request = async <T>(
       throw new ApiError(deploymentProtectionMessage, response.status);
     }
 
-    const fallbackMessage = response.status >= 500 ? "Error interno del servidor" : "Solicitud invalida";
+    let fallbackMessage = response.status >= 500 ? "Error interno del servidor" : "Solicitud invalida";
+
+    if (path === "/api/uploads/presign" && !isJson) {
+      fallbackMessage =
+        "La API no devolvio JSON en /api/uploads/presign. Verifica que el backend tenga este endpoint desplegado y que CORS/Deployment Protection no lo este bloqueando.";
+    }
+
+    if (path === "/api/uploads/presign" && (response.status === 404 || response.status === 405)) {
+      fallbackMessage =
+        "El endpoint /api/uploads/presign no existe en la API configurada. Debes desplegar la version nueva del backend noteflow-api.";
+    }
+
     const message =
       payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
         ? payload.message
         : fallbackMessage;
 
-    throw new ApiError(message, response.status, payload);
+    throw new ApiError(message, response.status, payload ?? nonJsonBody);
   }
 
   if (!parser) {
@@ -276,4 +296,22 @@ export const api = {
       method: "DELETE",
       token,
     }),
+
+  createUploadPresignedUrl: (
+    token: string,
+    payload: {
+      purpose: "avatar" | "restock" | "order";
+      contentType: string;
+      extension?: string;
+    },
+  ) =>
+    request<UploadPresignResponse>(
+      "/api/uploads/presign",
+      {
+        method: "POST",
+        token,
+        body: JSON.stringify(payload),
+      },
+      (raw) => uploadPresignResponseSchema.parse(raw),
+    ),
 };

@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Redirect } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { Platform, StyleSheet, View } from "react-native";
 import { Avatar, Button, Card, Divider, HelperText, Text, TextInput, useTheme } from "react-native-paper";
 
+import { RemoteImage } from "../../components/items/RemoteImage";
 import { useNotesStore, useStoreHydrated } from "../../store/notesStore";
 
 const getInitials = (email: string) => {
@@ -28,6 +30,8 @@ export default function UsuarioScreen() {
   const user = useNotesStore((state) => state.user);
   const logout = useNotesStore((state) => state.logout);
   const updateProfileName = useNotesStore((state) => state.updateProfileName);
+  const updateProfilePhoto = useNotesStore((state) => state.updateProfilePhoto);
+  const uploadImageToS3 = useNotesStore((state) => state.uploadImageToS3);
   const changePassword = useNotesStore((state) => state.changePassword);
   const errorMessage = useNotesStore((state) => state.errorMessage);
   const authLoading = useNotesStore((state) => state.authLoading);
@@ -36,6 +40,7 @@ export default function UsuarioScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   if (!hasHydrated) {
     return null;
@@ -47,13 +52,73 @@ export default function UsuarioScreen() {
 
   const initials = useMemo(() => getInitials(user.email), [user.email]);
 
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [user.photoURL]);
+
+  const handlePickProfilePhoto = async () => {
+    setSuccessMessage("");
+
+    if (Platform.OS !== "web") {
+      const permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissions.granted) {
+        throw new Error("Debes permitir acceso a la galeria para subir foto.");
+      }
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.8,
+      mediaTypes: ["images"],
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    const extensionFromName = asset.fileName?.split(".").pop()?.toLowerCase();
+    const extensionFromMime = asset.mimeType?.split("/").pop()?.toLowerCase();
+    const extension = extensionFromName || extensionFromMime;
+
+    const publicUrl = await uploadImageToS3({
+      localUri: asset.uri,
+      purpose: "avatar",
+      contentType: asset.mimeType ?? "image/jpeg",
+      extension,
+    });
+
+    await updateProfilePhoto(publicUrl);
+    setSuccessMessage("Foto de perfil actualizada correctamente.");
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Card mode="contained" style={{ backgroundColor: theme.colors.surfaceVariant }}>
         <Card.Content style={styles.content}>
-          <Avatar.Text size={84} label={initials} />
-          <Button mode="outlined" disabled>
-            Cambiar foto (AWS)
+          {user.photoURL && !avatarLoadError ? (
+            <RemoteImage
+              uri={user.photoURL}
+              containerStyle={styles.avatarImage}
+              style={styles.avatarImage}
+              placeholderText="Avatar"
+              showOverlay={false}
+              onLoadError={() => setAvatarLoadError(true)}
+            />
+          ) : (
+            <Avatar.Text size={84} label={initials} />
+          )}
+          <Button
+            mode="outlined"
+            onPress={() => {
+              void handlePickProfilePhoto().catch((error) => {
+                setSuccessMessage("");
+              });
+            }}
+            loading={authLoading}
+            disabled={authLoading}
+          >
+            Subir foto
           </Button>
 
           <View style={styles.textBlock}>
@@ -85,8 +150,12 @@ export default function UsuarioScreen() {
             mode="contained-tonal"
             onPress={async () => {
               setSuccessMessage("");
-              await updateProfileName(displayName);
-              setSuccessMessage("Nombre actualizado correctamente.");
+              try {
+                await updateProfileName(displayName);
+                setSuccessMessage("Nombre actualizado correctamente.");
+              } catch {
+                setSuccessMessage("");
+              }
             }}
             loading={authLoading}
             disabled={authLoading}
@@ -114,10 +183,14 @@ export default function UsuarioScreen() {
             mode="contained-tonal"
             onPress={async () => {
               setSuccessMessage("");
-              await changePassword(currentPassword, newPassword);
-              setCurrentPassword("");
-              setNewPassword("");
-              setSuccessMessage("Contrasena actualizada correctamente.");
+              try {
+                await changePassword(currentPassword, newPassword);
+                setCurrentPassword("");
+                setNewPassword("");
+                setSuccessMessage("Contrasena actualizada correctamente.");
+              } catch {
+                setSuccessMessage("");
+              }
             }}
             loading={authLoading}
             disabled={authLoading}
@@ -165,5 +238,10 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: "100%",
+  },
+  avatarImage: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
   },
 });

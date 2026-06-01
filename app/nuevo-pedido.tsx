@@ -1,36 +1,20 @@
 import { z } from "zod";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { useState, type ChangeEvent } from "react";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from "react-native";
 import { Button, Card, HelperText, Text, TextInput, useTheme } from "react-native-paper";
 
 import { RemoteImage } from "../components/items/RemoteImage";
 import { useNotesStore } from "../store/notesStore";
-import type { ProductCategory } from "../types";
 
-const categories: Array<{ value: ProductCategory; label: string }> = [
-  { value: "cupcakes", label: "Cupcakes" },
-  { value: "pastel-entero-pequeno", label: "Pastel pequeno" },
-  { value: "pastel-entero-grande", label: "Pastel grande" },
-  { value: "dulces", label: "Dulces" },
-  { value: "galletas", label: "Galletas" },
-  { value: "otros", label: "Otros" },
-];
-
-const restockSchema = z.object({
+const orderSchema = z.object({
   title: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   description: z.string().min(3, "La descripcion debe tener al menos 3 caracteres"),
-  price: z.number().positive("El precio debe ser mayor a 0"),
-  shelfLifeDays: z.number().int().min(1, "Debe durar al menos 1 dia").max(365, "Maximo 365 dias"),
-  category: z.enum(["cupcakes", "pastel-entero-pequeno", "pastel-entero-grande", "dulces", "galletas", "otros"]),
+  routeUrl: z.string().url("La ruta debe ser una URL valida de Google Maps"),
+  deliveryDate: z.date(),
 });
-
-const addDays = (days: number) => {
-  const value = new Date();
-  value.setDate(value.getDate() + days);
-  return value;
-};
 
 const formatShortDate = (value: Date) =>
   new Intl.DateTimeFormat("es-ES", {
@@ -39,38 +23,38 @@ const formatShortDate = (value: Date) =>
     year: "numeric",
   }).format(value);
 
+const toHtmlDateValue = (value: Date) => {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const awsPlaceholderText = "AWS placeholder";
 
-export default function NewNoteModal() {
+export default function NewOrderModal() {
   const router = useRouter();
   const theme = useTheme();
 
-  const createRestockNote = useNotesStore((state) => state.createRestockNote);
+  const createChecklist = useNotesStore((state) => state.createChecklist);
   const uploadImageToS3 = useNotesStore((state) => state.uploadImageToS3);
   const isLoading = useNotesStore((state) => state.isLoading);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-
-  const [priceInput, setPriceInput] = useState("");
-  const [shelfLifeInput, setShelfLifeInput] = useState("");
-  const [category, setCategory] = useState<ProductCategory>("cupcakes");
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
+  const [showDeliveryDatePicker, setShowDeliveryDatePicker] = useState(false);
+  const [routeUrl, setRouteUrl] = useState("");
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const computedExpirationDate = useMemo(() => {
-    const days = Number(shelfLifeInput);
-    if (!Number.isFinite(days) || days <= 0) return undefined;
-    return addDays(Math.floor(days));
-  }, [shelfLifeInput]);
-
   const reset = () => {
     setTitle("");
     setDescription("");
-    setPriceInput("");
-    setShelfLifeInput("");
-    setCategory("cupcakes");
+    setDeliveryDate(undefined);
+    setShowDeliveryDatePicker(false);
+    setRouteUrl("");
     setUploadedImageUrl(null);
     setErrors({});
   };
@@ -100,7 +84,7 @@ export default function NewNoteModal() {
 
     const publicUrl = await uploadImageToS3({
       localUri: asset.uri,
-      purpose: "restock",
+      purpose: "order",
       contentType: asset.mimeType ?? "image/jpeg",
       extension,
     });
@@ -108,42 +92,57 @@ export default function NewNoteModal() {
     setUploadedImageUrl(publicUrl);
   };
 
+  const onChangeDeliveryDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === "android") {
+      setShowDeliveryDatePicker(false);
+    }
+
+    if (event.type === "set" && selectedDate) {
+      setDeliveryDate(selectedDate);
+    }
+  };
+
+  const onWebDeliveryDateChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    if (!value) {
+      setDeliveryDate(undefined);
+      return;
+    }
+
+    const parsed = new Date(`${value}T00:00:00`);
+    if (!Number.isNaN(parsed.getTime())) {
+      setDeliveryDate(parsed);
+    }
+  };
+
   const submit = async () => {
     setErrors({});
 
-    const parsedPrice = Number(priceInput.replace(",", "."));
-    const parsedShelfLife = Number(shelfLifeInput);
-
-    const result = restockSchema.safeParse({
+    const result = orderSchema.safeParse({
       title: title.trim(),
       description: description.trim(),
-      price: parsedPrice,
-      shelfLifeDays: parsedShelfLife,
-      category,
+      routeUrl: routeUrl.trim(),
+      deliveryDate,
     });
 
-    if (!result.success || !computedExpirationDate) {
-      const fieldErrors = result.success ? {} : result.error.flatten().fieldErrors;
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
       setErrors({
         title: fieldErrors.title?.[0] ?? "",
         description: fieldErrors.description?.[0] ?? "",
-        price: fieldErrors.price?.[0] ?? "",
-        shelfLifeDays: fieldErrors.shelfLifeDays?.[0] ?? "",
-        submit: computedExpirationDate ? "" : "Define una duracion valida para calcular la caducidad.",
+        routeUrl: fieldErrors.routeUrl?.[0] ?? "",
+        deliveryDate: fieldErrors.deliveryDate?.[0] ?? "",
       });
       return;
     }
 
     try {
-      await createRestockNote({
+      await createChecklist({
         title: result.data.title,
-        content: result.data.description,
-        price: result.data.price,
-        shelfLifeDays: result.data.shelfLifeDays,
-        category: result.data.category,
+        description: result.data.description,
+        routeUrl: result.data.routeUrl,
         imagePlaceholder: uploadedImageUrl ?? awsPlaceholderText,
-        status: "hay-pocos",
-        expiresAt: computedExpirationDate,
+        deliveryDate: result.data.deliveryDate,
       });
 
       reset();
@@ -151,7 +150,7 @@ export default function NewNoteModal() {
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
-        submit: error instanceof Error ? error.message : "No se pudo crear la reposición",
+        submit: error instanceof Error ? error.message : "No se pudo crear el pedido",
       }));
     }
   };
@@ -160,15 +159,10 @@ export default function NewNoteModal() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text variant="titleLarge" style={{ color: theme.colors.secondary, fontWeight: "700" }}>
-          Nueva reposicion
+          Nuevo pedido
         </Text>
 
-        <TextInput
-          mode="outlined"
-          label="Nombre de reposición"
-          value={title}
-          onChangeText={setTitle}
-        />
+        <TextInput mode="outlined" label="Nombre del pedido" value={title} onChangeText={setTitle} />
         <HelperText type="error" visible={Boolean(errors.title)}>
           {errors.title}
         </HelperText>
@@ -185,52 +179,61 @@ export default function NewNoteModal() {
           {errors.description}
         </HelperText>
 
-        <TextInput
-          mode="outlined"
-          label="Precio"
-          keyboardType="decimal-pad"
-          value={priceInput}
-          onChangeText={setPriceInput}
-        />
-        <HelperText type="error" visible={Boolean(errors.price)}>
-          {errors.price}
-        </HelperText>
-
-        <TextInput
-          mode="outlined"
-          label="Tiempo de caducidad (dias)"
-          keyboardType="number-pad"
-          value={shelfLifeInput}
-          onChangeText={setShelfLifeInput}
-        />
-        <HelperText type="error" visible={Boolean(errors.shelfLifeDays)}>
-          {errors.shelfLifeDays}
-        </HelperText>
-
-        <Text variant="bodySmall">Etiqueta</Text>
-        <View style={styles.wrapRow}>
-          {categories.map((item) => (
-            <Button
-              key={item.value}
-              mode={category === item.value ? "contained" : "outlined"}
-              onPress={() => setCategory(item.value)}
-            >
-              {item.label}
+        {Platform.OS === "web" ? (
+          <>
+            <Text variant="bodySmall">Fecha de entrega</Text>
+            <input
+              type="date"
+              value={deliveryDate ? toHtmlDateValue(deliveryDate) : ""}
+              onChange={onWebDeliveryDateChange}
+              style={{
+                borderRadius: 12,
+                border: `1px solid ${theme.colors.outline}`,
+                padding: "14px 12px",
+                fontSize: 16,
+                backgroundColor: theme.colors.surface,
+                color: theme.colors.onSurface,
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <Button mode="outlined" icon="calendar" onPress={() => setShowDeliveryDatePicker(true)}>
+              {deliveryDate ? `Fecha de entrega: ${formatShortDate(deliveryDate)}` : "Seleccionar fecha de entrega"}
             </Button>
-          ))}
-        </View>
+            {showDeliveryDatePicker && (
+              <DateTimePicker
+                mode="date"
+                value={deliveryDate ?? new Date()}
+                display={Platform.OS === "ios" ? "inline" : "default"}
+                onChange={onChangeDeliveryDate}
+              />
+            )}
+          </>
+        )}
+        <HelperText type="error" visible={Boolean(errors.deliveryDate)}>
+          {errors.deliveryDate}
+        </HelperText>
 
-        <Text variant="bodySmall" style={styles.metaText}>
-          Caduca aproximadamente: {computedExpirationDate ? formatShortDate(computedExpirationDate) : "sin calcular"}
-        </Text>
+        <TextInput
+          mode="outlined"
+          label="Ruta de Google Maps"
+          autoCapitalize="none"
+          value={routeUrl}
+          onChangeText={setRouteUrl}
+          placeholder="https://maps.google.com/..."
+        />
+        <HelperText type="error" visible={Boolean(errors.routeUrl)}>
+          {errors.routeUrl}
+        </HelperText>
 
         <Card mode="outlined" style={styles.placeholderCard}>
           <Card.Content>
-            <Text variant="titleSmall">Foto del producto</Text>
+            <Text variant="titleSmall">Foto del pedido</Text>
             <RemoteImage
               uri={uploadedImageUrl}
-              containerStyle={styles.restockImagePreview}
-              style={styles.restockImagePreview}
+              containerStyle={styles.orderImagePreview}
+              style={styles.orderImagePreview}
               placeholderText="Sin foto subida"
             />
             <Text variant="bodySmall" style={styles.metaText}>
@@ -274,18 +277,13 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  wrapRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
   metaText: {
     opacity: 0.75,
   },
   placeholderCard: {
     marginTop: 6,
   },
-  restockImagePreview: {
+  orderImagePreview: {
     width: "100%",
     height: 180,
     borderRadius: 12,

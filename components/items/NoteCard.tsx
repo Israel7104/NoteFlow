@@ -3,6 +3,7 @@ import { memo } from "react";
 import { StyleSheet } from "react-native";
 import { Card, Text } from "react-native-paper";
 
+import { RemoteImage } from "./RemoteImage";
 import type { Note } from "../../types";
 import { formatDate } from "./itemUtils";
 
@@ -14,6 +15,12 @@ interface NoteCardProps {
 const NoteCardComponent = ({ note, onPress }: NoteCardProps) => (
   <Card style={styles.card} onPress={onPress} mode="elevated">
     <Card.Content>
+      <RemoteImage
+        uri={note.imagePlaceholder}
+        containerStyle={styles.thumbnail}
+        style={styles.thumbnail}
+        placeholderText="Sin foto"
+      />
       <Text variant="titleMedium" numberOfLines={1}>
         {note.title}
       </Text>
@@ -36,6 +43,12 @@ const styles = StyleSheet.create({
   },
   preview: {
     marginTop: 8,
+  },
+  thumbnail: {
+    width: "100%",
+    height: 140,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   meta: {
     marginTop: 10,

@@ -2,7 +2,7 @@
 import { FontAwesome6, MaterialIcons } from "@expo/vector-icons";
 import { Link, Redirect, Tabs } from "expo-router";
 import { useEffect } from "react";
-import { Alert, TouchableOpacity } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useNotesStore, useStoreHydrated } from "../../store/notesStore";
@@ -57,19 +57,22 @@ export default function TabsLayout() {
             <MaterialIcons name="logout" size={22} />
           </TouchableOpacity>
         ),
-        headerRight: () => (
-          <Link href={{ pathname: "/nueva-note" }} asChild>
-            <TouchableOpacity style={{ marginRight: 16 }}>
-              <MaterialIcons name="note-add" size={22} />
-            </TouchableOpacity>
-          </Link>
-        ),
       }}
     >
       <Tabs.Screen
         name="notas"
         options={{
           title: "Reposicion",
+          headerRight: () => (
+            <Link href={{ pathname: "/nueva-note" }} asChild>
+              <TouchableOpacity style={styles.headerActionButton}>
+                <View style={styles.headerActionInner}>
+                  <MaterialIcons name="note-add" size={18} />
+                  <Text style={styles.headerActionText}>Nueva reposicion</Text>
+                </View>
+              </TouchableOpacity>
+            </Link>
+          ),
           tabBarIcon: ({ color, size }) => <MaterialIcons name="notes" size={size} color={color} />,
         }}
       />
@@ -77,6 +80,16 @@ export default function TabsLayout() {
         name="checklists"
         options={{
           title: "Pedidos",
+          headerRight: () => (
+            <Link href={{ pathname: "/nuevo-pedido" }} asChild>
+              <TouchableOpacity style={styles.headerActionButton}>
+                <View style={styles.headerActionInner}>
+                  <MaterialIcons name="note-add" size={18} />
+                  <Text style={styles.headerActionText}>Nuevo pedido</Text>
+                </View>
+              </TouchableOpacity>
+            </Link>
+          ),
           tabBarIcon: ({ color, size }) => <FontAwesome6 name="list-check" size={size} color={color} />,
         }}
       />
@@ -104,3 +117,21 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  headerActionButton: {
+    marginRight: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  headerActionInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  headerActionText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+});

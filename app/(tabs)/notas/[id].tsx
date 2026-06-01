@@ -4,6 +4,7 @@ import { Alert, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Button, Card, Text } from "react-native-paper";
 
+import { RemoteImage } from "../../../components/items/RemoteImage";
 import { useNotesStore } from "../../../store/notesStore";
 
 export default function NoteDetailScreen() {
@@ -44,6 +45,12 @@ export default function NoteDetailScreen() {
     <View style={styles.container}>
       <Card mode="elevated">
         <Card.Content>
+          <RemoteImage
+            uri={note.imagePlaceholder}
+            containerStyle={styles.image}
+            style={styles.image}
+            placeholderText="Sin foto"
+          />
           <Text variant="headlineMedium">{note.title}</Text>
           <Text variant="bodyMedium" style={styles.date}>
             Creado: {new Date(note.createdAt).toLocaleString("es-ES")}
@@ -64,9 +71,6 @@ export default function NoteDetailScreen() {
             {note.expiresAt
               ? `Caducidad: ${new Date(note.expiresAt).toLocaleDateString("es-ES")}`
               : "Caducidad: sin fecha"}
-          </Text>
-          <Text variant="bodyMedium" style={styles.date}>
-            Foto: {note.imagePlaceholder}
           </Text>
           <Text variant="bodyLarge" style={styles.content}>
             {note.content}
@@ -110,6 +114,12 @@ const styles = StyleSheet.create({
   },
   date: {
     marginTop: 8,
+  },
+  image: {
+    width: "100%",
+    height: 220,
+    borderRadius: 12,
+    marginBottom: 14,
   },
   content: {
     marginTop: 16,

@@ -68,7 +68,14 @@ export default function RootLayout() {
               <Stack.Screen
                 name="nueva-note"
                 options={{
-                  title: "Nuevo registro",
+                  title: "Nueva reposicion",
+                  presentation: "modal",
+                }}
+              />
+              <Stack.Screen
+                name="nuevo-pedido"
+                options={{
+                  title: "Nuevo pedido",
                   presentation: "modal",
                 }}
               />

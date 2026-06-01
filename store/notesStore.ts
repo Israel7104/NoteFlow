@@ -75,7 +75,14 @@ interface NotesStore {
   loginWithGooglePopup: () => Promise<void>;
   loginWithGoogleIdToken: (idToken: string) => Promise<void>;
   updateProfileName: (displayName: string) => Promise<void>;
+  updateProfilePhoto: (photoURL: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  uploadImageToS3: (input: {
+    localUri: string;
+    purpose: "avatar" | "restock" | "order";
+    contentType?: string;
+    extension?: string;
+  }) => Promise<string>;
   logout: () => Promise<void>;
   refreshNotes: () => Promise<void>;
   createRestockNote: (input: CreateRestockInput) => Promise<void>;
@@ -334,6 +341,44 @@ const createAlertIdea = async (
   });
 };
 
+const uploadImageToS3 = async (
+  token: string,
+  input: {
+    localUri: string;
+    purpose: "avatar" | "restock" | "order";
+    contentType?: string;
+    extension?: string;
+  },
+) => {
+  const contentType = input.contentType ?? "image/jpeg";
+
+  const presign = await api.createUploadPresignedUrl(token, {
+    purpose: input.purpose,
+    contentType,
+    extension: input.extension,
+  });
+
+  const localResponse = await fetch(input.localUri);
+  if (!localResponse.ok) {
+    throw new Error("No se pudo leer la imagen local seleccionada.");
+  }
+
+  const blob = await localResponse.blob();
+  const uploadResponse = await fetch(presign.signedUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": contentType,
+    },
+    body: blob,
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error("No se pudo subir la imagen a AWS S3.");
+  }
+
+  return presign.publicUrl;
+};
+
 export const useNotesStore = create<NotesStore>()(
   persist(
     (set, get) => ({
@@ -484,6 +529,25 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      updateProfilePhoto: async (photoURL) => {
+        set({ authLoading: true, errorMessage: null });
+
+        try {
+          const updatedUser = await firebaseAuthService.updatePhotoURL(photoURL);
+          set((state) => ({
+            user: state.user
+              ? {
+                  ...updatedUser,
+                  photoURL,
+                }
+              : updatedUser,
+            authLoading: false,
+          }));
+        } catch (error) {
+          set({ authLoading: false, errorMessage: getErrorMessage(error) });
+          throw error;
+        }
+      },
       changePassword: async (currentPassword, newPassword) => {
         set({ authLoading: true, errorMessage: null });
 
@@ -581,6 +645,19 @@ export const useNotesStore = create<NotesStore>()(
 
           const normalized = await fetchAndNormalizeNotes(token);
           set({ ...normalized, isLoading: false });
+        } catch (error) {
+          set({ isLoading: false, errorMessage: getErrorMessage(error) });
+          throw error;
+        }
+      },
+      uploadImageToS3: async (input) => {
+        const token = await get().resolveAuthToken();
+        set({ isLoading: true, errorMessage: null });
+
+        try {
+          const publicUrl = await uploadImageToS3(token, input);
+          set({ isLoading: false });
+          return publicUrl;
         } catch (error) {
           set({ isLoading: false, errorMessage: getErrorMessage(error) });
           throw error;
