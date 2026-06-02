@@ -12,6 +12,7 @@ interface NoteCardProps {
   onPress: () => void;
 }
 
+// Resume una reposicion en formato tarjeta para los listados principales.
 const NoteCardComponent = ({ note, onPress }: NoteCardProps) => (
   <Card style={styles.card} onPress={onPress} mode="elevated">
     <Card.Content>

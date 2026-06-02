@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { useEffect, useMemo, useState } from "react";
 import { Redirect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -7,6 +8,7 @@ import { Avatar, Button, Card, Divider, HelperText, Text, TextInput, useTheme } 
 import { RemoteImage } from "../../components/items/RemoteImage";
 import { useNotesStore, useStoreHydrated } from "../../store/notesStore";
 
+// Genera las iniciales que se muestran cuando el usuario no tiene avatar.
 const getInitials = (email: string) => {
   const localPart = email.split("@")[0]?.trim();
   if (!localPart) return "NF";
@@ -23,6 +25,7 @@ const getInitials = (email: string) => {
   return `${chunks[0][0]}${chunks[1][0]}`.toUpperCase();
 };
 
+// Muestra y actualiza los datos del perfil autenticado.
 export default function UsuarioScreen() {
   const theme = useTheme();
   const hasHydrated = useStoreHydrated();
@@ -52,10 +55,12 @@ export default function UsuarioScreen() {
 
   const initials = useMemo(() => getInitials(user.email), [user.email]);
 
+  // Restablece el fallback del avatar cuando cambia la URL remota.
   useEffect(() => {
     setAvatarLoadError(false);
   }, [user.photoURL]);
 
+  // Selecciona una imagen local, la sube a S3 y la guarda como foto de perfil.
   const handlePickProfilePhoto = async () => {
     setSuccessMessage("");
 
@@ -140,6 +145,7 @@ export default function UsuarioScreen() {
 
           <Divider style={styles.divider} />
 
+          {/* Bloque para editar el nombre visible del usuario. */}
           <TextInput
             mode="outlined"
             label="Nombre de usuario"
@@ -165,6 +171,7 @@ export default function UsuarioScreen() {
 
           <Divider style={styles.divider} />
 
+          {/* Bloque para cambiar la contrasena actual del usuario. */}
           <TextInput
             mode="outlined"
             label="Contrasena actual"

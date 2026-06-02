@@ -6,6 +6,7 @@ import { Button, Chip, Text } from "react-native-paper";
 
 import { useNotesStore } from "../../../store/notesStore";
 
+// Muestra una alerta concreta y sus acciones de archivo o borrado.
 export default function IdeaDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function IdeaDetailScreen() {
           ? `Fecha objetivo: ${new Date(idea.dueDate).toLocaleDateString("es-ES")}`
           : "Fecha objetivo: sin fecha"}
       </Text>
+      {/* Las etiquetas ayudan a entender de donde sale la alerta. */}
       <View style={styles.tags}>
         {idea.tags.map((tag) => (
           <Chip key={tag}>{tag}</Chip>

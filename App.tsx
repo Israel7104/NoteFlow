@@ -2,6 +2,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 
+// Componente base generado por Expo; la app real navega desde Expo Router.
 export default function App() {
   return (
     <View style={styles.container}>

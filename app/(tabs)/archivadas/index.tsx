@@ -8,10 +8,12 @@ import { useNotesStore } from "../../../store/notesStore";
 import type { ArchivedItem } from "../../../types";
 import { isChecklistNote, isIdeaNote, isTextNote } from "../../../types";
 
+// Muestra los registros archivados y permite filtrarlos por titulo.
 export default function ArchivedScreen() {
   const archived = useNotesStore((state) => state.archived);
   const [query, setQuery] = useState("");
 
+  // Filtra el historial por coincidencia simple sobre el titulo original.
   const filtered = useMemo(
     () =>
       archived.filter((item) => {
@@ -46,6 +48,7 @@ export default function ArchivedScreen() {
                   Movido: {new Date(item.archivedAt).toLocaleDateString("es-ES")}
                 </Text>
               </View>
+              {/* Renderiza un resumen distinto segun el tipo de entidad archivada. */}
               {isTextNote(item.data) && (
                 <Text variant="bodySmall" numberOfLines={2} style={styles.preview}>
                   {item.data.content}

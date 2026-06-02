@@ -20,8 +20,10 @@ type Mode = "login" | "register";
 
 WebBrowser.maybeCompleteAuthSession();
 
+// Comprueba si la variable de entorno parece un client ID OAuth valido de Google.
 const isGoogleOAuthClientId = (value?: string) => Boolean(value && value.trim().endsWith(".apps.googleusercontent.com"));
 
+// Gestiona el acceso por email o Google y redirige cuando ya existe sesion.
 export default function AuthScreen() {
   const hasHydrated = useStoreHydrated();
   const token = useNotesStore((state) => state.token);
@@ -68,6 +70,7 @@ export default function AuthScreen() {
     isGoogleOAuthClientId(googleIosClientId) ||
     isGoogleOAuthClientId(googleAndroidClientId);
 
+  // Procesa la respuesta del proveedor OAuth y completa el login con Firebase.
   useEffect(() => {
     if (!googleResponse) return;
 
@@ -109,10 +112,12 @@ export default function AuthScreen() {
     return <Redirect href="/notas" />;
   }
 
+  // Lanza una vibracion corta para dar feedback a los botones principales.
   const triggerTapFeedback = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  // Valida el formulario y ejecuta login o registro segun el modo activo.
   const submit = async () => {
     clearError();
 
@@ -144,6 +149,7 @@ export default function AuthScreen() {
     }
   };
 
+  // Decide si el inicio con Google debe hacerse por popup web o por OAuth nativo.
   const submitGoogle = async () => {
     clearError();
     setGoogleError("");
@@ -184,6 +190,7 @@ export default function AuthScreen() {
               {title}
             </Text>
 
+            {/* Selector entre acceso y registro dentro del mismo formulario. */}
             <SegmentedButtons
               value={mode}
               style={styles.modeSelector}

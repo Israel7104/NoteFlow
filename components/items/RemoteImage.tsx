@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { memo, useMemo, useState } from "react";
 import { ActivityIndicator, Image, Platform, StyleSheet, View, type ImageStyle, type StyleProp, type ViewStyle } from "react-native";
 import { Text, useTheme } from "react-native-paper";
@@ -11,6 +12,7 @@ type RemoteImageProps = {
   onLoadError?: () => void;
 };
 
+// Muestra una imagen remota con placeholder, overlay y manejo de errores de carga.
 const RemoteImageComponent = ({
   uri,
   style,
@@ -23,7 +25,9 @@ const RemoteImageComponent = ({
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
+  // Solo intenta renderizar URLs HTTP validas para evitar errores locales.
   const shouldRenderImage = useMemo(() => Boolean(uri && /^https?:\/\//i.test(uri)), [uri]);
+  // En nativo se fuerza cache cuando la plataforma lo soporta.
   const imageSource = useMemo(
     () => (Platform.OS === "web" ? { uri: uri ?? undefined } : { uri: uri ?? undefined, cache: "force-cache" as const }),
     [uri],

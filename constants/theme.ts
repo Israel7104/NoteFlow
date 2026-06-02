@@ -1,6 +1,7 @@
 // Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import type { MD3Theme } from "react-native-paper";
 
+// Paleta neutra base sobre la que se construyen los temas claro y oscuro.
 const palette = {
   black: "#121212",
   white: "#FFFFFF",
@@ -16,6 +17,7 @@ const palette = {
   gray050: "#F7F7F7",
 };
 
+// Espaciados reutilizables para mantener consistencia visual.
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -25,6 +27,7 @@ export const spacing = {
   xxl: 32,
 };
 
+// Escalas tipograficas compartidas por pantallas y tarjetas.
 export const typography = {
   titleLarge: 28,
   titleMedium: 22,
@@ -32,6 +35,7 @@ export const typography = {
   caption: 13,
 };
 
+// Colores suaves para las alertas e ideas derivadas del negocio.
 export const noteIdeaColors = [
   palette.gray300,
   palette.gray200,
@@ -40,6 +44,7 @@ export const noteIdeaColors = [
   "#D0D0D0",
 ];
 
+// Variante del tema para superficies claras.
 export const lightTheme: Partial<MD3Theme> = {
   roundness: 14,
   colors: {
@@ -86,6 +91,7 @@ export const lightTheme: Partial<MD3Theme> = {
   },
 };
 
+// Variante del tema para superficies oscuras.
 export const darkTheme: Partial<MD3Theme> = {
   roundness: 14,
   colors: {

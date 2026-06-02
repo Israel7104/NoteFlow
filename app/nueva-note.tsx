@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { z } from "zod";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -26,12 +27,14 @@ const restockSchema = z.object({
   category: z.enum(["cupcakes", "pastel-entero-pequeno", "pastel-entero-grande", "dulces", "galletas", "otros"]),
 });
 
+// Calcula una fecha futura a partir de la fecha actual.
 const addDays = (days: number) => {
   const value = new Date();
   value.setDate(value.getDate() + days);
   return value;
 };
 
+// Convierte una fecha a un formato corto legible para la UI.
 const formatShortDate = (value: Date) =>
   new Intl.DateTimeFormat("es-ES", {
     day: "2-digit",
@@ -41,6 +44,7 @@ const formatShortDate = (value: Date) =>
 
 const awsPlaceholderText = "AWS placeholder";
 
+// Modal para registrar una nueva reposicion de producto.
 export default function NewNoteModal() {
   const router = useRouter();
   const theme = useTheme();
@@ -65,6 +69,7 @@ export default function NewNoteModal() {
     return addDays(Math.floor(days));
   }, [shelfLifeInput]);
 
+  // Limpia el formulario despues de guardar o cancelar la captura.
   const reset = () => {
     setTitle("");
     setDescription("");
@@ -75,6 +80,7 @@ export default function NewNoteModal() {
     setErrors({});
   };
 
+  // Abre la galeria, sube la imagen seleccionada y conserva la URL publica.
   const pickAndUploadPhoto = async () => {
     if (Platform.OS !== "web") {
       const permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -108,6 +114,7 @@ export default function NewNoteModal() {
     setUploadedImageUrl(publicUrl);
   };
 
+  // Valida los campos y crea la nota de reposicion en el store.
   const submit = async () => {
     setErrors({});
 
@@ -163,6 +170,7 @@ export default function NewNoteModal() {
           Nueva reposicion
         </Text>
 
+        {/* Datos principales del producto que se va a reponer. */}
         <TextInput
           mode="outlined"
           label="Nombre de reposición"
@@ -224,6 +232,7 @@ export default function NewNoteModal() {
           Caduca aproximadamente: {computedExpirationDate ? formatShortDate(computedExpirationDate) : "sin calcular"}
         </Text>
 
+        {/* Seccion de imagen para almacenar la foto del producto en S3. */}
         <Card mode="outlined" style={styles.placeholderCard}>
           <Card.Content>
             <Text variant="titleSmall">Foto del producto</Text>

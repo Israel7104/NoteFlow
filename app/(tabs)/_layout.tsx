@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useNotesStore, useStoreHydrated } from "../../store/notesStore";
 
+// Define las tabs principales y sus acciones globales de navegacion.
 export default function TabsLayout() {
   const hasHydrated = useStoreHydrated();
   const token = useNotesStore((state) => state.token);
@@ -15,6 +16,7 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const tabBarBottomInset = Math.max(insets.bottom, 10);
 
+  // Mantiene las listas sincronizadas cada vez que existe una sesion valida.
   useEffect(() => {
     if (!token) return;
     void refreshNotes();
@@ -39,6 +41,7 @@ export default function TabsLayout() {
           paddingBottom: tabBarBottomInset,
         },
         headerLeft: () => (
+          // Permite cerrar la sesion desde cualquier pestaña principal.
           <TouchableOpacity
             style={{ marginLeft: 16 }}
             onPress={() => {
@@ -59,6 +62,7 @@ export default function TabsLayout() {
         ),
       }}
     >
+      {/* Pestaña de reposicion y acceso al modal de alta. */}
       <Tabs.Screen
         name="notas"
         options={{
@@ -76,6 +80,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <MaterialIcons name="notes" size={size} color={color} />,
         }}
       />
+      {/* Pestaña de pedidos con acceso rapido al nuevo checklist. */}
       <Tabs.Screen
         name="checklists"
         options={{
@@ -93,6 +98,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <FontAwesome6 name="list-check" size={size} color={color} />,
         }}
       />
+      {/* Pestañas secundarias de alertas, historial y perfil. */}
       <Tabs.Screen
         name="ideas"
         options={{

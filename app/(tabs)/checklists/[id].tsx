@@ -6,6 +6,7 @@ import { Button, Checkbox, List, Text } from "react-native-paper";
 
 import { useNotesStore } from "../../../store/notesStore";
 
+// Muestra el detalle de un pedido y permite completar o cerrar sus tareas.
 export default function ChecklistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function ChecklistDetailScreen() {
     );
   }
 
+  // Alterna el estado de una tarea y detecta cuando todo el pedido queda completo.
   const onToggle = async (itemId: string) => {
     try {
       const completedAll = await toggleChecklistItem(checklist.id, itemId);
@@ -54,6 +56,7 @@ export default function ChecklistDetailScreen() {
       <Text variant="bodyMedium" style={styles.meta}>
         Foto: {checklist.imagePlaceholder}
       </Text>
+      {/* Cada item del checklist puede marcarse desde la fila o el checkbox. */}
       {checklist.items.map((item) => (
         <List.Item
           key={item.id}

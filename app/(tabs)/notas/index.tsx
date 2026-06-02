@@ -3,12 +3,14 @@ import { FlashList } from "@shopify/flash-list";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Text, TextInput } from "react-native-paper";
+import { Button, Text, TextInput, useTheme } from "react-native-paper";
+
 
 import { NoteCard } from "../../../components/items/NoteCard";
 import { useNotesStore } from "../../../store/notesStore";
 import type { Note } from "../../../types";
 
+// Lista las reposiciones activas y permite filtrarlas por texto y estado.
 export default function NotesScreen() {
   const notes = useNotesStore((state) => state.notes);
   const isLoading = useNotesStore((state) => state.isLoading);
@@ -17,12 +19,14 @@ export default function NotesScreen() {
   const router = useRouter();
   const [query, setQuery] = useState("");
 
+  // Recarga los datos cada vez que la pestaña vuelve a estar visible.
   useFocusEffect(
     useCallback(() => {
       void refreshNotes();
     }, [refreshNotes]),
   );
 
+  // Aplica una busqueda simple sobre titulo, descripcion y estado.
   const filtered = useMemo(
     () =>
       notes.filter(
@@ -62,6 +66,7 @@ export default function NotesScreen() {
           void refreshNotes();
         }}
         contentContainerStyle={styles.listContent}
+        // Cada tarjeta abre el detalle de la reposicion seleccionada.
         renderItem={({ item }) => (
           <View>
             <NoteCard
@@ -72,8 +77,9 @@ export default function NotesScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text variant="headlineSmall">Sin pasteles en reposicion</Text>
-            <Text variant="bodyMedium">Crea el primer registro para controlar stock y fechas.</Text>
+            {/* Mensaje de estado vacio cuando todavia no hay registros. */}
+            <Text variant="headlineSmall" style={{ color: useTheme().colors.primary }}>Sin pasteles en reposicion</Text>
+            <Text variant="bodyMedium" style={{ color: useTheme().colors.primary }}>Crea el primer registro para controlar stock y fechas.</Text>
           </View>
         }
       />

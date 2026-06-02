@@ -9,11 +9,13 @@ import { ChecklistCard } from "../../../components/items/ChecklistCard";
 import { useNotesStore } from "../../../store/notesStore";
 import type { ChecklistNote } from "../../../types";
 
+// Lista los pedidos activos y filtra por titulo o tareas incluidas.
 export default function ChecklistsScreen() {
   const checklists = useNotesStore((state) => state.checklists);
   const router = useRouter();
   const [query, setQuery] = useState("");
 
+  // Permite buscar tanto por nombre del pedido como por contenido de la lista.
   const filtered = useMemo(
     () =>
       checklists.filter((item) => {
@@ -41,6 +43,7 @@ export default function ChecklistsScreen() {
         keyExtractor={(item) => item.id}
         {...({ estimatedItemSize: 116 } as any)}
         contentContainerStyle={styles.listContent}
+        // Cada tarjeta navega al detalle para gestionar tareas del pedido.
         renderItem={({ item }) => (
           <View>
             <ChecklistCard

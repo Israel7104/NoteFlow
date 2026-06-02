@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import {
   createUserWithEmailAndPassword,
   EmailAuthProvider,
@@ -27,6 +28,7 @@ type AuthSession = {
   token: string;
 };
 
+// Convierte el usuario bruto de Firebase al contrato que usa la aplicacion.
 const mapUser = (user: User): AuthUser => ({
   id: user.uid,
   email: user.email ?? "",
@@ -34,6 +36,7 @@ const mapUser = (user: User): AuthUser => ({
   photoURL: user.photoURL ?? "",
 });
 
+// Traduce errores tecnicos de Firebase a mensajes comprensibles para la UI.
 const mapFirebaseErrorMessage = (error: unknown): string => {
   if (!(error instanceof Error)) {
     return "No fue posible autenticar. Intenta de nuevo.";
@@ -72,6 +75,7 @@ const mapFirebaseErrorMessage = (error: unknown): string => {
   return message;
 };
 
+// Espera a que Firebase restaure la sesion persistida despues del arranque.
 const waitForAuthRestore = async (): Promise<void> => {
   if (firebaseAuth.currentUser) return;
 
@@ -83,6 +87,7 @@ const waitForAuthRestore = async (): Promise<void> => {
   });
 };
 
+// Empaqueta el usuario autenticado junto con su ID token actual.
 const buildSession = async (user: User): Promise<AuthSession> => {
   const token = await user.getIdToken();
 
@@ -92,6 +97,7 @@ const buildSession = async (user: User): Promise<AuthSession> => {
   };
 };
 
+// Servicio de autenticacion que encapsula email/password, Google y perfil.
 export const firebaseAuthService = {
   login: async (email: string, password: string): Promise<AuthSession> => {
     try {

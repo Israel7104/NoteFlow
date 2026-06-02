@@ -7,6 +7,7 @@ import { Button, Card, Text } from "react-native-paper";
 import { RemoteImage } from "../../../components/items/RemoteImage";
 import { useNotesStore } from "../../../store/notesStore";
 
+// Presenta el detalle de una reposicion con acciones para archivar o eliminar.
 export default function NoteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function NoteDetailScreen() {
     );
   }
 
+  // Pide confirmacion antes de eliminar definitivamente la reposicion.
   const confirmDelete = () => {
     Alert.alert("Eliminar registro", "Esta accion no se puede deshacer", [
       { text: "Cancelar", style: "cancel" },

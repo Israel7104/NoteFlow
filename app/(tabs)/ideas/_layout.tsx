@@ -1,6 +1,7 @@
 // Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { Stack } from "expo-router";
 
+// Agrupa la navegacion del listado de alertas y su detalle.
 export default function IdeasLayout() {
   return (
     <Stack>

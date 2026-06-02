@@ -9,11 +9,13 @@ import { IdeaCard } from "../../../components/items/IdeaCard";
 import { useNotesStore } from "../../../store/notesStore";
 import type { IdeaNote } from "../../../types";
 
+// Lista las alertas derivadas de reposiciones y pedidos proximos.
 export default function IdeasScreen() {
   const ideas = useNotesStore((state) => state.ideas);
   const router = useRouter();
   const [query, setQuery] = useState("");
 
+  // Busca coincidencias por titulo o por etiquetas de la alerta.
   const filtered = useMemo(
     () =>
       ideas.filter((idea) => {
@@ -41,6 +43,7 @@ export default function IdeasScreen() {
         keyExtractor={(item) => item.id}
         {...({ estimatedItemSize: 128 } as any)}
         contentContainerStyle={styles.listContent}
+        // Cada tarjeta abre la alerta completa para revisar y archivar. 
         renderItem={({ item }) => (
           <View>
             <IdeaCard

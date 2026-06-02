@@ -11,6 +11,7 @@ interface ChecklistCardProps {
   onPress: () => void;
 }
 
+// Resume un pedido mostrando avance y metadatos clave de entrega.
 const ChecklistCardComponent = ({ checklist, onPress }: ChecklistCardProps) => {
   const total = checklist.items.length;
   const completed = checklist.items.filter((item) => item.isCompleted).length;

@@ -4,6 +4,7 @@ import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "noteflow.jwt";
 
+// Fallback para web cuando SecureStore no esta disponible.
 const webStorage = {
   getItem: (key: string) => {
     if (typeof localStorage === "undefined") return null;
@@ -19,6 +20,7 @@ const webStorage = {
   },
 };
 
+// Expone una API unica para guardar el token en web o en nativo.
 export const tokenStorage = {
   getToken: async () => {
     if (Platform.OS === "web") {

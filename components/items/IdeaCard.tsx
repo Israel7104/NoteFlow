@@ -11,6 +11,7 @@ interface IdeaCardProps {
   onPress: () => void;
 }
 
+// Presenta una alerta en una tarjeta compacta con color y etiquetas.
 const IdeaCardComponent = ({ idea, onPress }: IdeaCardProps) => (
   <Card style={[styles.card, { backgroundColor: idea.color }]} onPress={onPress} mode="elevated">
     <Card.Content>

@@ -60,6 +60,7 @@ export class ApiError extends Error {
   }
 }
 
+// Resuelve la URL base configurada para el backend de NoteFlow.
 const getApiBaseUrl = () => {
   const rawUrl = process.env.EXPO_PUBLIC_API_URL;
   if (!rawUrl) {
@@ -69,6 +70,7 @@ const getApiBaseUrl = () => {
   return rawUrl.replace(/\/$/, "");
 };
 
+// Envuelve una promesa con timeout para no dejar la UI esperando indefinidamente.
 const withTimeout = async <T>(promise: Promise<T>, ms: number): Promise<T> => {
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
@@ -87,6 +89,7 @@ const withTimeout = async <T>(promise: Promise<T>, ms: number): Promise<T> => {
   }
 };
 
+// Detecta respuestas HTML de Vercel cuando la API esta protegida y no devuelve JSON.
 const getDeploymentProtectionMessage = (response: Response, contentType?: string) => {
   const isHtml = contentType?.includes("text/html");
   const hasVercelHeaders = Boolean(response.headers.get("x-vercel-id") || response.headers.get("x-frame-options"));
@@ -98,6 +101,7 @@ const getDeploymentProtectionMessage = (response: Response, contentType?: string
   return undefined;
 };
 
+// Punto unico para peticiones HTTP con timeout, token y parseo tipado.
 const request = async <T>(
   path: string,
   options: RequestInit & { token?: string },
@@ -175,6 +179,7 @@ const request = async <T>(
   return parser(payload);
 };
 
+// Cliente tipado de la API usado por el store para leer y mutar datos.
 export const api = {
   register: (email: string, password: string) =>
     request<AuthResponse>(

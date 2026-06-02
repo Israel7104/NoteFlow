@@ -1,6 +1,7 @@
 // Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { Stack } from "expo-router";
 
+// Registra las rutas del listado de pedidos y su pantalla de detalle.
 export default function ChecklistsLayout() {
   return (
     <Stack>

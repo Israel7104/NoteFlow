@@ -1,3 +1,4 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { z } from "zod";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
@@ -16,6 +17,7 @@ const orderSchema = z.object({
   deliveryDate: z.date(),
 });
 
+// Formatea la fecha para mostrarla en etiquetas y botones.
 const formatShortDate = (value: Date) =>
   new Intl.DateTimeFormat("es-ES", {
     day: "2-digit",
@@ -23,6 +25,7 @@ const formatShortDate = (value: Date) =>
     year: "numeric",
   }).format(value);
 
+// Convierte la fecha al formato que espera el input HTML date en web.
 const toHtmlDateValue = (value: Date) => {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
@@ -32,6 +35,7 @@ const toHtmlDateValue = (value: Date) => {
 
 const awsPlaceholderText = "AWS placeholder";
 
+// Modal para registrar un pedido con entrega, ruta y evidencia visual.
 export default function NewOrderModal() {
   const router = useRouter();
   const theme = useTheme();
@@ -49,6 +53,7 @@ export default function NewOrderModal() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Restablece el estado local del formulario despues de guardar o salir.
   const reset = () => {
     setTitle("");
     setDescription("");
@@ -59,6 +64,7 @@ export default function NewOrderModal() {
     setErrors({});
   };
 
+  // Abre la galeria y sube la foto del pedido al almacenamiento remoto.
   const pickAndUploadPhoto = async () => {
     if (Platform.OS !== "web") {
       const permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -92,6 +98,7 @@ export default function NewOrderModal() {
     setUploadedImageUrl(publicUrl);
   };
 
+  // Actualiza la fecha seleccionada desde el picker nativo.
   const onChangeDeliveryDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (Platform.OS === "android") {
       setShowDeliveryDatePicker(false);
@@ -102,6 +109,7 @@ export default function NewOrderModal() {
     }
   };
 
+  // Sincroniza la fecha cuando la app corre en web con input HTML.
   const onWebDeliveryDateChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     if (!value) {
@@ -115,6 +123,7 @@ export default function NewOrderModal() {
     }
   };
 
+  // Valida el formulario y crea el checklist asociado al pedido.
   const submit = async () => {
     setErrors({});
 
@@ -162,6 +171,7 @@ export default function NewOrderModal() {
           Nuevo pedido
         </Text>
 
+        {/* Datos base del pedido y su seguimiento logístico. */}
         <TextInput mode="outlined" label="Nombre del pedido" value={title} onChangeText={setTitle} />
         <HelperText type="error" visible={Boolean(errors.title)}>
           {errors.title}
@@ -229,6 +239,7 @@ export default function NewOrderModal() {
 
         <Card mode="outlined" style={styles.placeholderCard}>
           <Card.Content>
+            {/* La imagen se usa como referencia visual del pedido. */}
             <Text variant="titleSmall">Foto del pedido</Text>
             <RemoteImage
               uri={uploadedImageUrl}

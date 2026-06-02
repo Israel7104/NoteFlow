@@ -9,6 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { darkTheme, lightTheme } from "../constants/theme";
 import { useNotesStore, useStoreHydrated } from "../store/notesStore";
 
+// Configura el tema global, inicializa el store y registra la navegacion raiz.
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -16,10 +17,12 @@ export default function RootLayout() {
   const initialize = useNotesStore((state) => state.initialize);
   const isWeb = Platform.OS === "web";
 
+  // Arranca la sesion y sincroniza datos persistidos al montar la app.
   useEffect(() => {
     void initialize();
   }, [initialize]);
 
+  // Fusiona el tema base de Paper con los tokens propios de NoteFlow.
   const theme = useMemo(
     () => ({
       ...(isDark ? MD3DarkTheme : MD3LightTheme),
@@ -46,6 +49,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
+        {/* En web se centra una columna de contenido para no estirar la interfaz. */}
         <View style={[styles.root, { backgroundColor: isWeb ? "#FFFFFF" : theme.colors.background }]}>
           <View
             style={[
@@ -56,6 +60,7 @@ export default function RootLayout() {
             ]}
           >
             <StatusBar style={isDark ? "light" : "dark"} />
+            {/* Define la pila principal de rutas y los modales de captura. */}
             <Stack>
               <Stack.Screen
                 name="auth"

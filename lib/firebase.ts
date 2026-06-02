@@ -1,7 +1,9 @@
+// Comentario general: este archivo forma parte de la aplicacion NoteFlow y su logica principal.
 import { initializeApp, getApp, getApps, type FirebaseOptions } from "firebase/app";
 import { getAuth, initializeAuth } from "firebase/auth";
 import { Platform } from "react-native";
 
+// Lee y valida la configuracion publica necesaria para inicializar Firebase.
 const getFirebaseConfig = (): FirebaseOptions => {
   const apiKey = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
   const authDomain = process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN;
@@ -26,8 +28,10 @@ const getFirebaseConfig = (): FirebaseOptions => {
   };
 };
 
+// Reutiliza la instancia existente cuando la app ya fue inicializada.
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(getFirebaseConfig());
 
+// En nativo intenta inicializar auth manualmente; en web usa la instancia estándar.
 const firebaseAuth =
   Platform.OS === "web"
     ? getAuth(firebaseApp)

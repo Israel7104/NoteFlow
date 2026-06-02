@@ -3,6 +3,7 @@ import { Redirect } from "expo-router";
 
 import { useNotesStore, useStoreHydrated } from "../store/notesStore";
 
+// Redirige automaticamente al login o a la seccion principal segun la sesion actual.
 export default function Index() {
   const hasHydrated = useStoreHydrated();
   const token = useNotesStore((state) => state.token);

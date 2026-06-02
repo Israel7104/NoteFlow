@@ -98,6 +98,7 @@ interface NotesStore {
   toggleChecklistItem: (checklistId: string, itemId: string) => Promise<boolean>;
 }
 
+// Ordena colecciones por fecha de actualizacion descendente para mostrarlas primero.
 const sortByDateDesc = <T extends { updatedAt: Date }>(list: T[]) =>
   [...list].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
@@ -113,9 +114,11 @@ const colorToStatus = Object.entries(statusToColor).reduce(
   {} as Record<string, RestockStatus>,
 );
 
+// Extrae un mensaje util desde errores desconocidos lanzados en async.
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Ocurrio un error inesperado";
 
+// Ajusta mensajes de autenticacion cuando el backend rechaza el token de Firebase.
 const getAuthFlowErrorMessage = (error: unknown) => {
   const message = getErrorMessage(error);
 
@@ -126,12 +129,14 @@ const getAuthFlowErrorMessage = (error: unknown) => {
   return message;
 };
 
+// Convierte fechas opcionales de la API a objetos Date validos.
 const parseDate = (value: string | null | undefined) => {
   if (!value) return undefined;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 };
 
+// Calcula dias restantes sin devolver valores negativos para la UI.
 const daysUntil = (date?: Date) => {
   if (!date) return 0;
   const now = new Date();
@@ -139,8 +144,10 @@ const daysUntil = (date?: Date) => {
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 };
 
+// Serializa los metadatos de una reposicion dentro del campo content de la API.
 const encodeRestockMeta = (meta: RestockMeta) => `${RESTOCK_META_PREFIX}${JSON.stringify(meta)}`;
 
+// Recupera y valida los metadatos persistidos de una reposicion.
 const parseRestockMeta = (value: string | null | undefined): RestockMeta | null => {
   if (!value || !value.startsWith(RESTOCK_META_PREFIX)) return null;
 
@@ -162,8 +169,10 @@ const parseRestockMeta = (value: string | null | undefined): RestockMeta | null 
   return null;
 };
 
+// Serializa los metadatos propios de un pedido/checklist.
 const encodeOrderMeta = (meta: OrderMeta) => `${ORDER_META_PREFIX}${JSON.stringify(meta)}`;
 
+// Recupera descripcion, ruta y placeholder de un pedido persistido.
 const parseOrderMeta = (value: string | null | undefined): OrderMeta | null => {
   if (!value || !value.startsWith(ORDER_META_PREFIX)) return null;
 
@@ -183,8 +192,10 @@ const parseOrderMeta = (value: string | null | undefined): OrderMeta | null => {
   return null;
 };
 
+// Serializa la informacion base que luego se muestra como alerta/idea.
 const encodeAlertMeta = (meta: AlertMeta) => `${ALERT_META_PREFIX}${JSON.stringify(meta)}`;
 
+// Reconstruye una alerta guardada dentro del contenido de la nota remota.
 const parseAlertMeta = (value: string | null | undefined): AlertMeta | null => {
   if (!value || !value.startsWith(ALERT_META_PREFIX)) return null;
 
@@ -205,12 +216,14 @@ const parseAlertMeta = (value: string | null | undefined): AlertMeta | null => {
   return null;
 };
 
+// Adapta el formato de checklist de la API al formato usado por la UI.
 const normalizeChecklistItem = (item: ApiChecklistItem) => ({
   id: item.id,
   text: item.text,
   isCompleted: item.is_completed,
 });
 
+// Deriva el estado visual de una reposicion segun color y fecha de caducidad.
 const deriveStatus = (note: ApiNote): RestockStatus => {
   if (!note.color) {
     return parseDate(note.expires_at)?.getTime() && parseDate(note.expires_at)!.getTime() < Date.now()
@@ -229,6 +242,7 @@ const deriveStatus = (note: ApiNote): RestockStatus => {
   return "hay-pocos";
 };
 
+// Convierte una nota remota tipo checklist al modelo interno del store.
 const normalizeChecklist = (note: ApiNote, items: ApiChecklistItem[]): ChecklistNote => {
   const orderMeta = parseOrderMeta(note.content);
 
@@ -245,6 +259,7 @@ const normalizeChecklist = (note: ApiNote, items: ApiChecklistItem[]): Checklist
   };
 };
 
+// Convierte una nota de texto del backend en una reposicion lista para renderizar.
 const normalizeTextNote = (note: ApiNote): Note => {
   const restockMeta = parseRestockMeta(note.content);
 
@@ -263,6 +278,7 @@ const normalizeTextNote = (note: ApiNote): Note => {
   };
 };
 
+// Convierte una nota de tipo idea/alerta al formato usado por la pestaña de alertas.
 const normalizeIdea = (note: ApiNote): IdeaNote => {
   const alertMeta = parseAlertMeta(note.content);
   const dueDate = parseDate(alertMeta?.dueDate);
@@ -281,6 +297,7 @@ const normalizeIdea = (note: ApiNote): IdeaNote => {
   };
 };
 
+// Descarga todas las notas y completa los checklist-items faltantes antes de normalizar.
 const fetchAndNormalizeNotes = async (token: string) => {
   const apiNotes = await api.getNotes(token);
 
@@ -308,6 +325,7 @@ const fetchAndNormalizeNotes = async (token: string) => {
   };
 };
 
+// Crea una idea automatica para recordar reposiciones o entregas proximas.
 const createAlertIdea = async (
   token: string,
   params: {
@@ -341,6 +359,7 @@ const createAlertIdea = async (
   });
 };
 
+// Pide una URL firmada, sube el archivo y devuelve la URL publica final.
 const uploadImageToS3 = async (
   token: string,
   input: {
@@ -379,6 +398,7 @@ const uploadImageToS3 = async (
   return presign.publicUrl;
 };
 
+// Store central de la app: autentica, sincroniza notas y expone acciones de negocio.
 export const useNotesStore = create<NotesStore>()(
   persist(
     (set, get) => ({
@@ -394,6 +414,7 @@ export const useNotesStore = create<NotesStore>()(
       errorMessage: null,
       setHasHydrated: (state) => set({ hasHydrated: state }),
       clearError: () => set({ errorMessage: null }),
+      // Revalida la sesion de Firebase y sincroniza token y usuario en memoria.
       resolveAuthToken: async () => {
         const session = await firebaseAuthService.getSession();
 
@@ -409,6 +430,7 @@ export const useNotesStore = create<NotesStore>()(
         await tokenStorage.setToken(session.token);
         return session.token;
       },
+      // Inicializa la app restaurando sesion, token y datos remotos persistidos.
       initialize: async () => {
         if (get().hasHydrated) return;
 
@@ -446,6 +468,7 @@ export const useNotesStore = create<NotesStore>()(
           });
         }
       },
+      // Flujo de autenticacion por email y contrasena.
       login: async (email, password) => {
         set({ authLoading: true, errorMessage: null });
 
@@ -464,6 +487,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Registro de un nuevo usuario y carga inicial de datos.
       register: async (email, password) => {
         set({ authLoading: true, errorMessage: null });
 
@@ -482,6 +506,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Inicio de sesion con popup de Google en web.
       loginWithGooglePopup: async () => {
         set({ authLoading: true, errorMessage: null });
 
@@ -500,6 +525,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Inicio de sesion con ID token emitido por el flujo OAuth nativo.
       loginWithGoogleIdToken: async (idToken) => {
         set({ authLoading: true, errorMessage: null });
 
@@ -518,6 +544,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Actualiza el nombre visible del usuario autenticado.
       updateProfileName: async (displayName) => {
         set({ authLoading: true, errorMessage: null });
 
@@ -529,6 +556,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Guarda una nueva foto de perfil ya subida al almacenamiento remoto.
       updateProfilePhoto: async (photoURL) => {
         set({ authLoading: true, errorMessage: null });
 
@@ -548,6 +576,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Reautentica al usuario antes de cambiar su contrasena en Firebase.
       changePassword: async (currentPassword, newPassword) => {
         set({ authLoading: true, errorMessage: null });
 
@@ -559,6 +588,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Limpia la sesion y borra todos los datos locales sensibles.
       logout: async () => {
         await firebaseAuthService.logout();
         await tokenStorage.clearToken();
@@ -572,6 +602,7 @@ export const useNotesStore = create<NotesStore>()(
           errorMessage: null,
         });
       },
+      // Fuerza una resincronizacion completa de notas, pedidos e ideas.
       refreshNotes: async () => {
         const token = await get().resolveAuthToken();
 
@@ -585,6 +616,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Crea una reposicion y su alerta asociada a la fecha de vencimiento.
       createRestockNote: async ({ title, content, price, shelfLifeDays, category, imagePlaceholder, status, expiresAt }) => {
         const token = await get().resolveAuthToken();
 
@@ -619,6 +651,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Crea un pedido tipo checklist y genera una alerta para su entrega.
       createChecklist: async ({ title, description, routeUrl, imagePlaceholder, deliveryDate }) => {
         const token = await get().resolveAuthToken();
 
@@ -650,6 +683,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Sube una imagen a S3 a traves del backend y devuelve su URL publica.
       uploadImageToS3: async (input) => {
         const token = await get().resolveAuthToken();
         set({ isLoading: true, errorMessage: null });
@@ -663,6 +697,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Agrega una tarea al checklist seleccionado y actualiza el estado local.
       addChecklistItem: async (checklistId, text) => {
         const token = await get().resolveAuthToken();
 
@@ -679,6 +714,7 @@ export const useNotesStore = create<NotesStore>()(
           ),
         }));
       },
+      // Inserta una idea manual en el backend y la refleja en el store local.
       addIdea: async (idea) => {
         const token = await get().resolveAuthToken();
 
@@ -703,6 +739,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Elimina una reposicion del backend y la saca del estado local.
       deleteNote: async (id) => {
         const token = await get().resolveAuthToken();
 
@@ -714,6 +751,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Elimina un pedido/checklist del backend y del store.
       deleteChecklist: async (id) => {
         const token = await get().resolveAuthToken();
 
@@ -725,6 +763,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Elimina una idea del backend y del store local.
       deleteIdea: async (id) => {
         const token = await get().resolveAuthToken();
 
@@ -736,6 +775,7 @@ export const useNotesStore = create<NotesStore>()(
           throw error;
         }
       },
+      // Mueve una reposicion al historial despues de eliminarla del backend.
       archiveNote: async (id) => {
         const found = get().notes.find((n) => n.id === id);
         if (!found) return;
@@ -754,6 +794,7 @@ export const useNotesStore = create<NotesStore>()(
           ],
         }));
       },
+      // Mueve un checklist al historial conservando su snapshot local.
       archiveChecklist: async (id) => {
         const found = get().checklists.find((c) => c.id === id);
         if (!found) return;
@@ -772,6 +813,7 @@ export const useNotesStore = create<NotesStore>()(
           ],
         }));
       },
+      // Mueve una alerta al historial conservando sus datos para consulta.
       archiveIdea: async (id) => {
         const found = get().ideas.find((i) => i.id === id);
         if (!found) return;
@@ -790,6 +832,7 @@ export const useNotesStore = create<NotesStore>()(
           ],
         }));
       },
+      // Alterna el estado de una tarea remota y devuelve si el checklist quedo completo.
       toggleChecklistItem: async (checklistId, itemId) => {
         const token = await get().resolveAuthToken();
 
@@ -861,8 +904,10 @@ export const useNotesStore = create<NotesStore>()(
   ),
 );
 
+// Selector corto para saber cuando el store termino de hidratarse.
 export const useStoreHydrated = () => useNotesStore((state) => state.hasHydrated);
 
+// Devuelve una vista resumida del estado de hidratacion y listas principales.
 export const useStoreHydration = () => {
   const hasHydrated = useNotesStore((state) => state.hasHydrated);
 
