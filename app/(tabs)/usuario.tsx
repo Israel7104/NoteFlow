@@ -136,11 +136,11 @@ export default function UsuarioScreen() {
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
               {user.email}
             </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            {/* <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
               {Platform.OS === "web"
                 ? "Sesion iniciada en web"
                 : "Sesion iniciada en dispositivo"}
-            </Text>
+            </Text> */}
           </View>
 
           <Divider style={styles.divider} />
@@ -174,14 +174,14 @@ export default function UsuarioScreen() {
           {/* Bloque para cambiar la contrasena actual del usuario. */}
           <TextInput
             mode="outlined"
-            label="Contrasena actual"
+            label="Contraseña actual"
             secureTextEntry
             value={currentPassword}
             onChangeText={setCurrentPassword}
           />
           <TextInput
             mode="outlined"
-            label="Nueva contrasena"
+            label="Nueva contraseña"
             secureTextEntry
             value={newPassword}
             onChangeText={setNewPassword}
@@ -194,7 +194,7 @@ export default function UsuarioScreen() {
                 await changePassword(currentPassword, newPassword);
                 setCurrentPassword("");
                 setNewPassword("");
-                setSuccessMessage("Contrasena actualizada correctamente.");
+                setSuccessMessage("Contraseña actualizada correctamente.");
               } catch {
                 setSuccessMessage("");
               }
@@ -202,7 +202,7 @@ export default function UsuarioScreen() {
             loading={authLoading}
             disabled={authLoading}
           >
-            Cambiar contrasena
+            Cambiar contraseña
           </Button>
 
           <HelperText type="error" visible={Boolean(errorMessage)}>
@@ -221,7 +221,7 @@ export default function UsuarioScreen() {
             loading={authLoading}
             disabled={authLoading}
           >
-            Cerrar sesion
+            Cerrar sesión
           </Button>
         </Card.Content>
       </Card>

@@ -2,12 +2,10 @@
 import { z } from "zod";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
 import { useState, type ChangeEvent } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from "react-native";
-import { Button, Card, HelperText, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, HelperText, Text, TextInput, useTheme } from "react-native-paper";
 
-import { RemoteImage } from "../components/items/RemoteImage";
 import { useNotesStore } from "../store/notesStore";
 
 const orderSchema = z.object({
@@ -33,7 +31,7 @@ const toHtmlDateValue = (value: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const awsPlaceholderText = "AWS placeholder";
+const orderImagePlaceholder = "Sin imagen";
 
 // Modal para registrar un pedido con entrega, ruta y evidencia visual.
 export default function NewOrderModal() {
@@ -41,7 +39,6 @@ export default function NewOrderModal() {
   const theme = useTheme();
 
   const createChecklist = useNotesStore((state) => state.createChecklist);
-  const uploadImageToS3 = useNotesStore((state) => state.uploadImageToS3);
   const isLoading = useNotesStore((state) => state.isLoading);
 
   const [title, setTitle] = useState("");
@@ -49,7 +46,6 @@ export default function NewOrderModal() {
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [showDeliveryDatePicker, setShowDeliveryDatePicker] = useState(false);
   const [routeUrl, setRouteUrl] = useState("");
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -60,42 +56,7 @@ export default function NewOrderModal() {
     setDeliveryDate(undefined);
     setShowDeliveryDatePicker(false);
     setRouteUrl("");
-    setUploadedImageUrl(null);
     setErrors({});
-  };
-
-  // Abre la galeria y sube la foto del pedido al almacenamiento remoto.
-  const pickAndUploadPhoto = async () => {
-    if (Platform.OS !== "web") {
-      const permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissions.granted) {
-        throw new Error("Debes permitir acceso a la galeria para subir foto.");
-      }
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      quality: 0.8,
-      mediaTypes: ["images"],
-    });
-
-    if (result.canceled || !result.assets?.length) {
-      return;
-    }
-
-    const asset = result.assets[0];
-    const extensionFromName = asset.fileName?.split(".").pop()?.toLowerCase();
-    const extensionFromMime = asset.mimeType?.split("/").pop()?.toLowerCase();
-    const extension = extensionFromName || extensionFromMime;
-
-    const publicUrl = await uploadImageToS3({
-      localUri: asset.uri,
-      purpose: "order",
-      contentType: asset.mimeType ?? "image/jpeg",
-      extension,
-    });
-
-    setUploadedImageUrl(publicUrl);
   };
 
   // Actualiza la fecha seleccionada desde el picker nativo.
@@ -150,7 +111,7 @@ export default function NewOrderModal() {
         title: result.data.title,
         description: result.data.description,
         routeUrl: result.data.routeUrl,
-        imagePlaceholder: uploadedImageUrl ?? awsPlaceholderText,
+        imagePlaceholder: orderImagePlaceholder,
         deliveryDate: result.data.deliveryDate,
       });
 
@@ -237,36 +198,6 @@ export default function NewOrderModal() {
           {errors.routeUrl}
         </HelperText>
 
-        <Card mode="outlined" style={styles.placeholderCard}>
-          <Card.Content>
-            {/* La imagen se usa como referencia visual del pedido. */}
-            <Text variant="titleSmall">Foto del pedido</Text>
-            <RemoteImage
-              uri={uploadedImageUrl}
-              containerStyle={styles.orderImagePreview}
-              style={styles.orderImagePreview}
-              placeholderText="Sin foto subida"
-            />
-            <Text variant="bodySmall" style={styles.metaText}>
-              {uploadedImageUrl ? "Imagen subida en AWS S3." : "La imagen se subira a AWS S3."}
-            </Text>
-            <Button
-              mode="outlined"
-              onPress={() => {
-                void pickAndUploadPhoto().catch((error) => {
-                  setErrors((prev) => ({
-                    ...prev,
-                    submit: error instanceof Error ? error.message : "No se pudo subir la imagen",
-                  }));
-                });
-              }}
-              disabled={isLoading}
-            >
-              {uploadedImageUrl ? "Cambiar foto" : "Subir foto"}
-            </Button>
-          </Card.Content>
-        </Card>
-
         <HelperText type="error" visible={Boolean(errors.submit)}>
           {errors.submit}
         </HelperText>
@@ -287,18 +218,5 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 16,
     paddingBottom: 40,
-  },
-  metaText: {
-    opacity: 0.75,
-  },
-  placeholderCard: {
-    marginTop: 6,
-  },
-  orderImagePreview: {
-    width: "100%",
-    height: 180,
-    borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 8,
   },
 });

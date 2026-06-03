@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "78655583484",
+    "project_id": "noteflow-5135c",
+    "storage_bucket": "noteflow-5135c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:78655583484:android:9b7d10f9786cfee0719379",
+        "android_client_info": {
+          "package_name": "com.beecakes.noteflow"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "78655583484-faqgd9b1iuqtde0n670ku20r8c9o49pc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyM61OSVhTMdu7U_M4kOpf-elTnAG1DIw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "78655583484-faqgd9b1iuqtde0n670ku20r8c9o49pc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
