@@ -41,5 +41,5 @@ yarn-error.*
 /ios
 /android
 
-/google-services.json
+google-services.json
 /GoogleService-Info.plist
