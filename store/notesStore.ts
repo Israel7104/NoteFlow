@@ -74,6 +74,7 @@ interface NotesStore {
   register: (email: string, password: string) => Promise<void>;
   loginWithGooglePopup: () => Promise<void>;
   loginWithGoogleIdToken: (idToken: string) => Promise<void>;
+  loginWithGoogleCredential: (input: { idToken?: string; accessToken?: string }) => Promise<void>;
   updateProfileName: (displayName: string) => Promise<void>;
   updateProfilePhoto: (photoURL: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
@@ -531,6 +532,25 @@ export const useNotesStore = create<NotesStore>()(
 
         try {
           const session = await firebaseAuthService.loginWithGoogleIdToken(idToken);
+          await tokenStorage.setToken(session.token);
+          const normalized = await fetchAndNormalizeNotes(session.token);
+          set({
+            token: session.token,
+            user: session.user,
+            authLoading: false,
+            ...normalized,
+          });
+        } catch (error) {
+          set({ authLoading: false, errorMessage: getAuthFlowErrorMessage(error) });
+          throw error;
+        }
+      },
+      // Inicio de sesion con credenciales OAuth nativas (id token o access token).
+      loginWithGoogleCredential: async (input) => {
+        set({ authLoading: true, errorMessage: null });
+
+        try {
+          const session = await firebaseAuthService.loginWithGoogleCredential(input);
           await tokenStorage.setToken(session.token);
           const normalized = await fetchAndNormalizeNotes(session.token);
           set({

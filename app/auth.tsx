@@ -3,9 +3,12 @@ import { z } from "zod";
 import { Redirect } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import * as Haptics from "expo-haptics";
-import * as WebBrowser from "expo-web-browser";
-import * as Google from "expo-auth-session/providers/google";
-import { ResponseType } from "expo-auth-session";
+import {
+  GoogleSignin,
+  isErrorWithCode,
+  isSuccessResponse,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { Button, Card, HelperText, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 
@@ -17,8 +20,7 @@ const authSchema = z.object({
 });
 
 type Mode = "login" | "register";
-
-WebBrowser.maybeCompleteAuthSession();
+type AuthMethod = "email" | "google";
 
 // Comprueba si la variable de entorno parece un client ID OAuth valido de Google.
 const isGoogleOAuthClientId = (value?: string) => Boolean(value && value.trim().endsWith(".apps.googleusercontent.com"));
@@ -39,65 +41,24 @@ export default function AuthScreen() {
   const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
   const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
   const googleAndroidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
-  const googleExpoClientId = process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID;
-  const hasAnyValidGoogleClientId =
-    isGoogleOAuthClientId(googleExpoClientId) ||
-    isGoogleOAuthClientId(googleWebClientId) ||
-    isGoogleOAuthClientId(googleIosClientId) ||
-    isGoogleOAuthClientId(googleAndroidClientId);
-  const resolvedGoogleClientId =
-    googleExpoClientId ?? googleWebClientId ?? googleIosClientId ?? googleAndroidClientId ?? "missing-client-id";
-
-  const [googleRequest, googleResponse, promptGoogle] = Google.useAuthRequest({
-    clientId: resolvedGoogleClientId,
-    webClientId: googleWebClientId,
-    iosClientId: googleIosClientId,
-    androidClientId: googleAndroidClientId,
-    responseType: ResponseType.IdToken,
-    scopes: ["openid", "profile", "email"],
-    selectAccount: true,
-  });
+  const validGoogleWebClientId = isGoogleOAuthClientId(googleWebClientId) ? googleWebClientId : undefined;
+  const validGoogleIosClientId = isGoogleOAuthClientId(googleIosClientId) ? googleIosClientId : undefined;
+  const validGoogleAndroidClientId = isGoogleOAuthClientId(googleAndroidClientId)
+    ? googleAndroidClientId
+    : undefined;
 
   const [mode, setMode] = useState<Mode>("login");
+  const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [googleError, setGoogleError] = useState<string>("");
 
   const isWeb = Platform.OS === "web";
-  const hasNativeGoogleClientId =
-    isGoogleOAuthClientId(googleExpoClientId) ||
-    isGoogleOAuthClientId(googleIosClientId) ||
-    isGoogleOAuthClientId(googleAndroidClientId);
-
-  // Procesa la respuesta del proveedor OAuth y completa el login con Firebase.
-  useEffect(() => {
-    if (!googleResponse) return;
-
-    if (googleResponse.type === "cancel" || googleResponse.type === "dismiss") {
-      setGoogleError("Se cancelo el inicio con Google.");
-      return;
-    }
-
-    if (googleResponse.type === "error") {
-      const message = googleResponse.error?.message ?? "Fallo el inicio con Google.";
-      setGoogleError(message);
-      return;
-    }
-
-    if (googleResponse.type !== "success") return;
-
-    const idToken = googleResponse.authentication?.idToken ?? googleResponse.params?.id_token;
-    if (!idToken) {
-      setGoogleError("Google no devolvio un ID token valido.");
-      return;
-    }
-
-    setGoogleError("");
-    void loginWithGoogleIdToken(idToken).catch(() => {
-      // El mensaje final se muestra desde el store.
-    });
-  }, [googleResponse, loginWithGoogleIdToken]);
+  const hasAnyValidGoogleClientId =
+    Boolean(validGoogleWebClientId) ||
+    Boolean(validGoogleIosClientId) ||
+    Boolean(validGoogleAndroidClientId);
 
   const title = useMemo(
     () => (mode === "login" ? "Inicia sesion en NoteFlow" : "Crea tu cuenta NoteFlow"),
@@ -149,7 +110,7 @@ export default function AuthScreen() {
     }
   };
 
-  // Decide si el inicio con Google debe hacerse por popup web o por OAuth nativo.
+  // Decide si el inicio con Google debe hacerse por popup web o por Google Sign-In nativo.
   const submitGoogle = async () => {
     clearError();
     setGoogleError("");
@@ -160,20 +121,65 @@ export default function AuthScreen() {
         return;
       }
 
-      if (!hasNativeGoogleClientId) {
-        setGoogleError(
-          "Configura OAuth Client ID valido (.apps.googleusercontent.com) en EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID o EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID / EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID.",
-        );
-        return;
-      }
-
       if (!hasAnyValidGoogleClientId) {
         setGoogleError("Tus valores EXPO_PUBLIC_GOOGLE_* parecen App IDs de Firebase (1:...). Deben ser OAuth Client IDs de Google.");
         return;
       }
 
-      await promptGoogle();
-    } catch {
+      if (!validGoogleWebClientId) {
+        setGoogleError(
+          "Para Android/iOS nativo configura EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (OAuth Web) valido en formato .apps.googleusercontent.com.",
+        );
+        return;
+      }
+
+      GoogleSignin.configure({
+        webClientId: validGoogleWebClientId,
+        iosClientId: validGoogleIosClientId,
+      });
+
+      if (Platform.OS === "android") {
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      }
+
+      const result = await GoogleSignin.signIn();
+
+      if (!isSuccessResponse(result)) {
+        setGoogleError("Se cancelo el inicio con Google.");
+        return;
+      }
+
+      const idToken = result.data.idToken;
+
+      if (!idToken) {
+        setGoogleError("Google no devolvio un idToken valido en el flujo nativo.");
+        return;
+      }
+
+      await loginWithGoogleIdToken(idToken);
+    } catch (error) {
+      if (isErrorWithCode(error)) {
+        if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+          setGoogleError("Se cancelo el inicio con Google.");
+          return;
+        }
+
+        if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+          setGoogleError("Google Play Services no esta disponible o necesita actualizarse en este dispositivo.");
+          return;
+        }
+
+        if (error.code === statusCodes.IN_PROGRESS) {
+          setGoogleError("Ya hay un inicio de sesion con Google en progreso.");
+          return;
+        }
+
+        if (error.code === statusCodes.SIGN_IN_REQUIRED) {
+          setGoogleError("Google requiere iniciar sesion de nuevo en este dispositivo.");
+          return;
+        }
+      }
+
       setGoogleError("No se pudo abrir el flujo de Google en este entorno.");
     }
   };
@@ -190,101 +196,150 @@ export default function AuthScreen() {
               {title}
             </Text>
 
-            {/* Selector entre acceso y registro dentro del mismo formulario. */}
             <SegmentedButtons
-              value={mode}
+              value={authMethod}
               style={styles.modeSelector}
               onValueChange={(value) => {
                 triggerTapFeedback();
-                setMode(value as Mode);
-                setFieldErrors({});
+                setAuthMethod(value as AuthMethod);
+                setGoogleError("");
                 clearError();
               }}
               buttons={[
                 {
-                  value: "login",
-                  label: "Entrar",
-                  icon: mode === "login" ? "check-circle" : "login",
+                  value: "email",
+                  label: "Email",
+                  icon: authMethod === "email" ? "check-circle" : "email",
                   style: {
-                    backgroundColor: mode === "login" ? theme.colors.primary : theme.colors.surface,
+                    backgroundColor: authMethod === "email" ? theme.colors.primary : theme.colors.surface,
                     borderColor: theme.colors.primary,
                   },
                   labelStyle: {
-                    color: mode === "login" ? theme.colors.onPrimary : theme.colors.primary,
+                    color: authMethod === "email" ? theme.colors.onPrimary : theme.colors.primary,
                     fontWeight: "700",
                   },
                 },
                 {
-                  value: "register",
-                  label: "Registro",
-                  icon: mode === "register" ? "check-circle" : "account-plus",
+                  value: "google",
+                  label: "Google",
+                  icon: authMethod === "google" ? "check-circle" : "google",
                   style: {
-                    backgroundColor: mode === "register" ? theme.colors.primary : theme.colors.surface,
+                    backgroundColor: authMethod === "google" ? theme.colors.primary : theme.colors.surface,
                     borderColor: theme.colors.primary,
                   },
                   labelStyle: {
-                    color: mode === "register" ? theme.colors.onPrimary : theme.colors.primary,
+                    color: authMethod === "google" ? theme.colors.onPrimary : theme.colors.primary,
                     fontWeight: "700",
                   },
                 },
               ]}
             />
 
-            <TextInput
-              mode="outlined"
-              label="Email"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
-            <HelperText type="error" visible={Boolean(fieldErrors.email)}>
-              {fieldErrors.email}
-            </HelperText>
+            {/* Selector entre acceso y registro dentro del mismo formulario. */}
+            {authMethod === "email" ? (
+              <>
+                <SegmentedButtons
+                  value={mode}
+                  style={styles.modeSelector}
+                  onValueChange={(value) => {
+                    triggerTapFeedback();
+                    setMode(value as Mode);
+                    setFieldErrors({});
+                    clearError();
+                  }}
+                  buttons={[
+                    {
+                      value: "login",
+                      label: "Entrar",
+                      icon: mode === "login" ? "check-circle" : "login",
+                      style: {
+                        backgroundColor: mode === "login" ? theme.colors.primary : theme.colors.surface,
+                        borderColor: theme.colors.primary,
+                      },
+                      labelStyle: {
+                        color: mode === "login" ? theme.colors.onPrimary : theme.colors.primary,
+                        fontWeight: "700",
+                      },
+                    },
+                    {
+                      value: "register",
+                      label: "Registro",
+                      icon: mode === "register" ? "check-circle" : "account-plus",
+                      style: {
+                        backgroundColor: mode === "register" ? theme.colors.primary : theme.colors.surface,
+                        borderColor: theme.colors.primary,
+                      },
+                      labelStyle: {
+                        color: mode === "register" ? theme.colors.onPrimary : theme.colors.primary,
+                        fontWeight: "700",
+                      },
+                    },
+                  ]}
+                />
 
-            <TextInput
-              mode="outlined"
-              label="Contrasena"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-            <HelperText type="error" visible={Boolean(fieldErrors.password)}>
-              {fieldErrors.password}
-            </HelperText>
+                <TextInput
+                  mode="outlined"
+                  label="Email"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+                <HelperText type="error" visible={Boolean(fieldErrors.email)}>
+                  {fieldErrors.email}
+                </HelperText>
 
-            <HelperText type="error" visible={Boolean(errorMessage)}>
-              {errorMessage}
-            </HelperText>
+                <TextInput
+                  mode="outlined"
+                  label="Contrasena"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <HelperText type="error" visible={Boolean(fieldErrors.password)}>
+                  {fieldErrors.password}
+                </HelperText>
 
-            <Button
-              mode="contained"
-              onPress={() => {
-                triggerTapFeedback();
-                void submit();
-              }}
-              loading={authLoading}
-              disabled={authLoading}
-            >
-              {mode === "login" ? "Entrar" : "Crear cuenta"}
-            </Button>
+                <HelperText type="error" visible={Boolean(errorMessage)}>
+                  {errorMessage}
+                </HelperText>
 
-            <Button
-              mode="outlined"
-              icon="google"
-              onPress={() => {
-                triggerTapFeedback();
-                void submitGoogle();
-              }}
-              loading={authLoading}
-              disabled={authLoading || (!isWeb && (!hasNativeGoogleClientId || !googleRequest))}
-            >
-              Continuar con Google
-            </Button>
+                <Button
+                  mode="contained"
+                  onPress={() => {
+                    triggerTapFeedback();
+                    void submit();
+                  }}
+                  loading={authLoading}
+                  disabled={authLoading}
+                >
+                  {mode === "login" ? "Entrar" : "Crear cuenta"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Accede con tu cuenta de Google. En Android necesitas un OAuth Client ID especifico para Android.
+                </Text>
 
-            <HelperText type="error" visible={Boolean(googleError)}>
-              {googleError}
-            </HelperText>
+                <Button
+                  mode="contained"
+                  icon="google"
+                  onPress={() => {
+                    triggerTapFeedback();
+                    void submitGoogle();
+                  }}
+                  loading={authLoading}
+                  disabled={authLoading}
+                >
+                  Iniciar con Google
+                </Button>
+
+                <HelperText type="error" visible={Boolean(googleError)}>
+                  {googleError}
+                </HelperText>
+              </>
+            )}
           </Card.Content>
         </Card>
       </View>

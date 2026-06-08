@@ -138,6 +138,20 @@ export const firebaseAuthService = {
     }
   },
 
+  loginWithGoogleCredential: async (input: { idToken?: string; accessToken?: string }): Promise<AuthSession> => {
+    if (!input.idToken && !input.accessToken) {
+      throw new Error("Google no devolvio credenciales validas.");
+    }
+
+    try {
+      const providerCredential = GoogleAuthProvider.credential(input.idToken ?? null, input.accessToken ?? null);
+      const credential = await signInWithCredential(firebaseAuth, providerCredential);
+      return buildSession(credential.user);
+    } catch (error) {
+      throw new Error(mapFirebaseErrorMessage(error));
+    }
+  },
+
   updateDisplayName: async (displayName: string): Promise<AuthUser> => {
     const currentUser = firebaseAuth.currentUser;
     if (!currentUser) {
